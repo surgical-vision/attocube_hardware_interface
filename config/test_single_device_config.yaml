@@ -1,0 +1,8 @@
+num_devices: 1
+num_actors: 1
+
+actors:
+  - actor1:
+      joint_name: x_axis
+      device: 1
+      axis: 1
