@@ -8,7 +8,7 @@ project(attocube_hardware_interface)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-#  ros_control
+  ros_control_boilerplate
   roscpp
 )
 

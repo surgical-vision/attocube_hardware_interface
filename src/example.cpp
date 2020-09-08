@@ -53,7 +53,7 @@ static int selectDevice()
 {
   EccInfo * info = NULL;
   unsigned int devCount = ECC_Check( &info );
-
+  printf("%d devices found\n", devCount);
   for ( unsigned int i = 0; i < devCount; i++ ) {
     printf( "Device found: No=%d ", i );
     if ( info[i] .locked ) {

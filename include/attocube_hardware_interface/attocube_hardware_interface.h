@@ -10,6 +10,7 @@
 #include <attocube_hardware_interface/attocube_actors.h>
 #include <hardware_interface/hardware_interface.h>
 #include <ros/ros.h>
+#include <ecc.h>
 
 class AttocubeHardwareInterface {
     AttocubeHardwareInterface();

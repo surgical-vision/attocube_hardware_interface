@@ -27,3 +27,7 @@ void AttocubeHardwareInterface::writePositions() {
 void AttocubeHardwareInterface::getActorFromName(std::string &joint_name, int &device, int &axis) {
 
 }
+
+int main( int argc, char ** argv ) {
+    return 1;
+}
