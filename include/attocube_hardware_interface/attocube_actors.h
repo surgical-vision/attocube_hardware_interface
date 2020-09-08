@@ -23,6 +23,12 @@ public:
 
     AttocubeActor(int device, int axis, std::string joint_name, int actor_type) :
             device_(device), axis_(axis), joint_name_(std::move(joint_name)), actor_type_(actor_type) {};
+
+    int* getType(){
+        return &actor_type_;
+    }
+
+
 };
 
 #endif //ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ACTORS_H

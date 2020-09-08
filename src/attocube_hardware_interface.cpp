@@ -50,6 +50,9 @@ void AttocubeHardwareInterface::setupDevices() {
 }
 
 void AttocubeHardwareInterface::readPositions() {
+    for(auto& actor : actors_){
+
+    }
 
 }
 
@@ -99,27 +102,28 @@ void AttocubeHardwareInterface::printActorInformation(int &dev, int &axis) {
 
     std::string type_name;
     switch (type) {
-        case ECC_actorLinear:   type_name = "Linear";
-        case ECC_actorGonio:    type_name = "Goniometer";
-        case ECC_actorRot:      type_name = "Rotation";
-        default:                type_name = "N/A";
+        case int(ECC_actorLinear):   type_name = "Linear";
+        case int(ECC_actorGonio):    type_name = "Goniometer";
+        case int(ECC_actorRot):      type_name = "Rotation";
+        default:                     type_name = "N/A";
     }
-    ROS_INFO_STREAM("For Device " << dev << " and axis " << axis << "\n\tName: " << name << "\n\tType: " << type_name);
-
+    ROS_INFO_STREAM("For Device " << dev << " and axis " << axis << "\n\tName: " << name << "\n\tType: " << type_name << "\n\tType ID: " << type);
     free(name);
 }
 
 void AttocubeHardwareInterface::getHardcodedConfig() {
+    ROS_WARN_STREAM("Using hardcoded configuration");
     actors_.emplace_back(0, 0, "x_axis", 6);
     actors_.emplace_back(0, 1, "y_axis", 6);
     actors_.emplace_back(0, 2, "goni", 10);
 }
 
 void AttocubeHardwareInterface::setupActors() {
+    ROS_INFO_STREAM("Setting up actors from config");
     if(!actors_.empty()){
-        for(const auto& actor : actors_){
+        for(auto& actor : actors_){
             ECC_controlActorSelection(devices_[actor.device_], actor.axis_,
-                                      reinterpret_cast<Int32 *>(actor.actor_type_), 1);
+                                      actor.getType(), 1);
         }
     } else{
         ROS_ERROR_STREAM("No actors are configured");
@@ -135,14 +139,17 @@ int main( int argc, char ** argv ) {
 
     if (interface.getDevicesAvailable() > 0) {
         interface.setupDevices();
+        ROS_INFO_STREAM("Devices setup");
         interface.getHardcodedConfig();
         interface.setupActors();
+        ros::Duration(0.1).sleep();
         auto axis = 0;
         interface.printActorInformation(interface.devices_[0], axis);
         axis = 1;
         interface.printActorInformation(interface.devices_[0], axis);
         axis = 2;
         interface.printActorInformation(interface.devices_[0], axis);
+        ros::Duration(0.1).sleep();
     } else{
         ROS_ERROR_STREAM("No devices available");
     }
