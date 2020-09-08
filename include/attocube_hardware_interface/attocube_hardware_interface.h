@@ -12,18 +12,37 @@
 #include <ros/ros.h>
 #include <ecc.h>
 
+static std::string getECCErrorMessage( int code )
+{
+    switch( code ) {
+        case NCB_Ok:                   return "";
+        case NCB_Error:                return "Unspecified error";
+        case NCB_Timeout:              return "Communication timeout";
+        case NCB_NotConnected:         return "No active connection to device";
+        case NCB_DriverError:          return "Error in comunication with driver";
+        case NCB_DeviceLocked:         return "Device is already in use by other";
+        case NCB_InvalidParam:         return "Parameter out of range";
+        case NCB_FeatureNotAvailable:  return "Feature not available";
+        default:                       return "Unknown error code";
+    }
+}
+
 class AttocubeHardwareInterface {
+public:
     AttocubeHardwareInterface(ros::NodeHandle& nh);
     ~AttocubeHardwareInterface();
     void getConfigFromParam(); // Setup the number of controller and the actor settings
+    void getHardcodedConfig();
     void setupDevices();
+    void setupActors();
+    void printActorInformation(int& dev, int& axis);
     void readPositions();
     void writePositions();
-    void getDevicesAvailable();
+    int getDevicesAvailable();
     void getActorFromName(std::string& joint_name, int& device, int& axis);
 
     ros::NodeHandle nh_;
-    std::vector<int> devices_;
+    std::vector<int> devices_, devices_available_;
     std::vector<AttocubeActor> actors_;
 
 };

@@ -1,8 +1,18 @@
-num_devices: 1
-num_actors: 1
-
 actors:
   - actor1:
       joint_name: x_axis
-      device: 1
+      device: 0
+      axis: 0
+      type: 6
+
+  - actor2:
+      joint_name: y_axis
+      device: 0
       axis: 1
+      type: 6
+
+  - actor3:
+      joint_name: goni
+      device: 0
+      axis: 2
+      type: 10
