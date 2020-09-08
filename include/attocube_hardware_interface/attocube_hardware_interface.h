@@ -13,14 +13,17 @@
 #include <ecc.h>
 
 class AttocubeHardwareInterface {
-    AttocubeHardwareInterface();
+    AttocubeHardwareInterface(ros::NodeHandle& nh);
+    ~AttocubeHardwareInterface();
     void getConfigFromParam(); // Setup the number of controller and the actor settings
     void setupDevices();
     void readPositions();
     void writePositions();
+    void getDevicesAvailable();
     void getActorFromName(std::string& joint_name, int& device, int& axis);
 
     ros::NodeHandle nh_;
+    std::vector<int> devices_;
     std::vector<AttocubeActor> actors_;
 
 };

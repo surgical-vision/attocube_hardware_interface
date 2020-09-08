@@ -99,6 +99,7 @@ int main( int argc, char ** argv )
   }
 
   rc = ECC_Connect( devNo, &devHndl );
+  printf("Device Handle: %d", devHndl);
   exitOnError( "ECC_Connect", rc, devHndl );
   rc = ECC_controlAmplitude( devHndl, 0, &amp, on );
   exitOnError( "ECC_controlAmplitude", rc, devHndl );
