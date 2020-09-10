@@ -51,6 +51,9 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>ros_control_boilerplate</depend>
   <depend>roscpp</depend>
+  <depend>std_srvs</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

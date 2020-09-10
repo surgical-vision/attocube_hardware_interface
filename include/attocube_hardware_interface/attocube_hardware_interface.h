@@ -11,6 +11,10 @@
 #include <hardware_interface/hardware_interface.h>
 #include <ros/ros.h>
 #include <ecc.h>
+#include <sensor_msgs/JointState.h>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <angles/angles.h>
+#include <std_srvs/SetBool.h>
 
 static std::string getECCErrorMessage( int code )
 {
@@ -27,6 +31,22 @@ static std::string getECCErrorMessage( int code )
     }
 }
 
+int toNanoMetre(double metre){
+    return (int) metre * 1e9;
+}
+
+double toMetre(int nano_metre){
+    return (double) nano_metre / 1e9;
+}
+
+int toMicroDegree(double radian){
+    return (int) (angles::to_degrees(radian) * 1e6);
+}
+
+double toRadian(int micro_degree){
+    return (double) angles::from_degrees(micro_degree / 1e6);
+}
+
 class AttocubeHardwareInterface {
 public:
     AttocubeHardwareInterface(ros::NodeHandle& nh);
@@ -35,15 +55,25 @@ public:
     void getHardcodedConfig();
     void setupDevices();
     void setupActors();
+    void setupInterfaces();
     void printActorInformation(int& dev, int& axis);
     void readPositions();
     void writePositions();
     int getDevicesAvailable();
-    void getActorFromName(std::string& joint_name, int& device, int& axis);
+    bool enableActors(bool& on);
+
+    // ROS side
+    void generateJointStateMsg(sensor_msgs::JointState& msg);
+    bool readJointTrajectoryMsg(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
+    void callbackJointTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
+    bool callbackSrvEnableActors(std_srvs::SetBool::Request &request, std_srvs::SetBool::Response &response);
 
     ros::NodeHandle nh_;
     std::vector<int> devices_, devices_available_;
-    std::vector<AttocubeActor> actors_;
+    std::map<std::string, AttocubeActor> actors_;
+    ros::Publisher publisher_joint_state_;
+    ros::Subscriber subscriber_joint_trajectory_;
+    ros::ServiceServer service_enable_actors_;
 
 };
 
