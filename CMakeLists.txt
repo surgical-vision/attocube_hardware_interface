@@ -141,6 +141,14 @@ target_link_libraries(${PROJECT_NAME}_hardware_interface
         ecc
         )
 
+add_executable(${PROJECT_NAME}_ros_interface src/attocube_ros_interface.cpp)
+set_target_properties(${PROJECT_NAME}_ros_interface PROPERTIES OUTPUT_NAME ros_interface PREFIX "")
+add_dependencies(${PROJECT_NAME}_ros_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_ros_interface
+        ${catkin_LIBRARIES}
+        ecc
+        )
+
 #############
 ## Install ##
 #############

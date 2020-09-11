@@ -47,21 +47,28 @@ void AttocubeHardwareInterface::setupDevices() {
             devices_.emplace_back(handle);
         }
     }
-
 }
 
 void AttocubeHardwareInterface::readPositions() {
+    int rc;
     for(auto& actor : actors_){
-        actor.second.reset_postion();
-        ECC_getPosition(actor.second.device_, actor.second.axis_, &actor.second.current_position_);
+        actor.second.resetPostion();
+        rc = ECC_getPosition(actor.second.device_, actor.second.axis_, &actor.second.current_position_);
         actor.second.current_read_time_ = ros::Time::now();
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to enable output with the error message: " << getECCErrorMessage(rc));
+        }
     }
 
 }
 
 void AttocubeHardwareInterface::writePositions() {
+    int rc;
     for(auto& actor : actors_){
-        ECC_controlTargetPosition(actor.second.device_, actor.second.axis_, &actor.second.desired_position_, 1);
+        rc = ECC_controlTargetPosition(actor.second.device_, actor.second.axis_, &actor.second.desired_position_, 1);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the desired position with the error message: " << getECCErrorMessage(rc));
+        }
     }
 }
 
@@ -114,9 +121,9 @@ void AttocubeHardwareInterface::printActorInformation(int &dev, int &axis) {
 
 void AttocubeHardwareInterface::getHardcodedConfig() {
     ROS_WARN_STREAM("Using hardcoded configuration");
-    actors_.emplace("x_axis", AttocubeActor(0, 0, "x_axis", ECSx5050));
-    actors_.emplace("y_axis", AttocubeActor(0, 1, "y_axis", ECSx5050));
-    actors_.emplace("goni", AttocubeActor(0, 2, "goni", ECGp5050));
+    actors_.emplace("x_axis", AttocubeActor(1, 0, "x_axis", ECSx5050));
+    actors_.emplace("y_axis", AttocubeActor(1, 1, "y_axis", ECSx5050));
+    actors_.emplace("goni", AttocubeActor(1, 2, "goni", ECGp5050));
 }
 
 void AttocubeHardwareInterface::setupActors() {
@@ -129,81 +136,207 @@ void AttocubeHardwareInterface::setupActors() {
     } else{
         ROS_ERROR_STREAM("No actors are configured");
     }
-
+    pushActorSettings();
 }
 
-void AttocubeHardwareInterface::generateJointStateMsg(sensor_msgs::JointState& msg) {
-    msg.name.clear();
-    msg.effort.clear();
-    msg.position.clear();
-    msg.velocity.clear();
-    // TODO: convert to m or rad
-    for(auto& actor : actors_){
-        msg.name.push_back(actor.first);
-        if (actor.second.actor_type_ == ECC_actorLinear){
-            msg.position.push_back(toMetre(actor.second.current_position_));
-            msg.velocity.push_back((double)(toMetre(actor.second.current_position_ - actor.second.previous_position_)) / (actor.second.current_read_time_ - actor.second.previous_read_time_).toSec());
-        } else{
-            msg.position.push_back(toRadian(actor.second.current_position_));
-            msg.velocity.push_back((double)(toRadian(actor.second.current_position_ - actor.second.previous_position_)) / (actor.second.current_read_time_ - actor.second.previous_read_time_).toSec());
-        }
-    }
-}
-
-bool AttocubeHardwareInterface::readJointTrajectoryMsg(const trajectory_msgs::JointTrajectory::ConstPtr& msg) {
-    //Check if there are multiple points
-    if(msg->points.size() > 1){
-        ROS_WARN_STREAM("Found multiple trajectory points\nCurrently only supports a single desired position for each joint\nOnly the first point will be used");
-    }
-    for(int i = 0; i < msg->joint_names.size(); i++){
-        auto actor = actors_.find(msg->joint_names[i]);
-        if(actor != actors_.end()){
-            // Found the actor with the joint name;
-            if(actor->second.actor_type_ == ECC_actorLinear) {
-                actor->second.desired_position_ = toNanoMetre(msg->points[i].positions[0]);
-            } else{
-                actor->second.desired_position_ = toMicroDegree(msg->points[i].positions[0]);
-            }
-        }
-    }
-    return false;
-}
-
-void AttocubeHardwareInterface::callbackJointTrajectory(const
-        trajectory_msgs::JointTrajectory::ConstPtr &msg) {
-    readJointTrajectoryMsg(msg);
-    writePositions();
-}
-
-bool AttocubeHardwareInterface::callbackSrvEnableActors(std_srvs::SetBool::Request &request,
-                                                        std_srvs::SetBool::Response &response) {
-    bool on = request.data;
-    response.success = enableActors(on);
-    return response.success;
-}
-
-bool AttocubeHardwareInterface::enableActors(bool& on) {
+bool AttocubeHardwareInterface::enableActors(bool on) {
     readPositions();
     int val = (int)on;
     int rc = 0, total_rc = 0;
     for(auto& actor : actors_){
         actor.second.desired_position_ = actor.second.current_position_;
-        rc = rc + ECC_controlMove(actor.second.device_, actor.second.axis_, &val, 1);
+
+        rc = ECC_controlOutput(actor.second.device_, actor.second.axis_, &val, 1);
+        total_rc += rc;
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to enable output with the error message: " << getECCErrorMessage(rc));
+        }
+        rc = ECC_controlMove(actor.second.device_, actor.second.axis_, &val, 1);
+        total_rc += rc;
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to setup control move with the error message: " << getECCErrorMessage(rc));
+        }
     }
-    if(rc == 0){
+    if(total_rc == 0){
         return true;
     } else{
         ROS_ERROR_STREAM("Some or all actuators have not been enabled");
         return false;
     }
-
 }
 
-void AttocubeHardwareInterface::setupInterfaces() {
-    publisher_joint_state_ = nh_.advertise<sensor_msgs::JointState>("joint_state", 10);
-    subscriber_joint_trajectory_ = nh_.subscribe("command_trajectory", 10, &AttocubeHardwareInterface::callbackJointTrajectory, this);
-    service_enable_actors_ = nh_.advertiseService("enable_actors", &AttocubeHardwareInterface::callbackSrvEnableActors, this);
+void AttocubeHardwareInterface::getReferenceValues() {
+    int status = 0, ref_position = 0, rc;
+    for(auto& actor : actors_){
+        rc = ECC_getStatusReference(actor.second.device_, actor.second.axis_, &status);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to get status reference with the error message: " << getECCErrorMessage(rc));
+        }
+        ECC_getReferencePosition(actor.second.device_, actor.second.axis_, &ref_position);
+        actor.second.reference_valid_ = status;
+        actor.second.refernce_position_ = ref_position;
+        ROS_INFO_STREAM("Reference for Joint: " << actor.first << "\nStatus: " << status << "\nPosition: " << ref_position);
+    }
+}
 
+void AttocubeHardwareInterface::pushActorSettings() {
+    int rc;
+    for(auto& actor : actors_){
+        rc = ECC_controlAmplitude(actor.second.device_, actor.second.axis_, &actor.second.amplitude_, 1);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the control amplitude with the error message: " << getECCErrorMessage(rc));
+        }
+        rc = ECC_controlFrequency(actor.second.device_, actor.second.axis_, &actor.second.frequency_, 1);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the control frequency with the error message: " << getECCErrorMessage(rc));
+        }
+    }
+}
+
+bool AttocubeHardwareInterface::findEOTLimits(std::string &joint_name, int direction, int timeout) {
+    int rc, on = 1, off = 0, eot_found = 0;
+    ros::Time start_time;
+    ros::Duration max_duration(timeout);
+
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        // Set output to deactivate on finding the end of travel
+        rc = ECC_controlEotOutputDeactive(actor->second.device_, actor->second.axis_, &on, 1);
+        if(rc == NCB_Ok) {
+            // set continous movement in the desired direction
+            if (direction == 0){
+                ECC_controlContinousBkwd(actor->second.device_, actor->second.axis_, &on, 1);
+                ECC_getStatusEotBkwd(actor->second.device_, actor->second.axis_, &eot_found);
+                start_time = ros::Time::now();
+                while (eot_found != 1){
+                    ECC_getStatusEotBkwd(actor->second.device_, actor->second.axis_, &eot_found);
+                    if((ros::Time::now() - start_time) > max_duration){
+                        ROS_WARN_STREAM("Finding EOT travel limit exceeded timeout");
+                        break;
+                    }
+                }
+                if(eot_found == 1){
+                    ROS_INFO_STREAM("EOT limit for " << actor->first << " has been found");
+                }
+                ECC_controlContinousBkwd(actor->second.device_, actor->second.axis_, &off, 1);
+            } else if (direction == 1){
+                ECC_controlContinousFwd(actor->second.device_, actor->second.axis_, &on, 1);
+                ECC_getStatusEotFwd(actor->second.device_, actor->second.axis_, &eot_found);
+                start_time = ros::Time::now();
+                while (eot_found != 1){
+                    ECC_getStatusEotFwd(actor->second.device_, actor->second.axis_, &eot_found);
+                    if((ros::Time::now() - start_time) > max_duration){
+                        ROS_WARN_STREAM("Finding EOT travel limit exceeded timeout");
+                        break;
+                    }
+                    ros::Duration(0.05).sleep();
+                }
+                if(eot_found == 1){
+                    ROS_INFO_STREAM("EOT limit for " << actor->first << " has been found");
+                }
+                ECC_controlContinousFwd(actor->second.device_, actor->second.axis_, &off, 1);
+
+            } else{
+                ROS_ERROR_STREAM("Direction was not 0 for backward or 1 for forward, set the direction to either of those values");
+            }
+
+            // Reenable output now the EOT has been found
+            rc = ECC_controlOutput(actor->second.device_, actor->second.axis_, &on, 1);
+            if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set the re enable the actor output with the error message: " << getECCErrorMessage(rc));
+            }
+            rc = ECC_controlMove(actor->second.device_, actor->second.axis_, &on, 1);
+            if(rc != NCB_Ok){
+                ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set the re enable the actor control move with the error message: " << getECCErrorMessage(rc));
+            }
+
+        } else{
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set reaching the EOT to deactivate the output with the error message: " << getECCErrorMessage(rc));
+        }
+    }
+    return eot_found;
+}
+
+bool AttocubeHardwareInterface::homeAllActors() {
+    bool success = false;
+    for(auto& actor : actors_){
+        ROS_INFO_STREAM("Finding limit for " << actor.first);
+        success = findEOTLimits(actor.second.joint_name_, actor.second.home_direction_, 10);
+        if(!success){
+            ROS_WARN_STREAM("Unable to find limit for " << actor.first);
+        }
+        // Set desired position to zero after finding the limit
+        actor.second.desired_position_ = 0;
+    }
+
+    ROS_INFO_STREAM("Found each eot now returning to 0");
+    writePositions();
+    waitForAllActorsHalt(20);
+    return success;
+}
+
+bool AttocubeHardwareInterface::waitForAllActorsHalt(int timeout) {
+    int ind_moving = -1, total_moving = -1;
+    ros::Time start_time = ros::Time::now();
+    ros::Duration max_duration(timeout);
+
+    while(total_moving != 0){
+        total_moving = 0;
+        for(auto& actor : actors_){
+            ECC_getStatusMoving(actor.second.device_, actor.second.axis_, &ind_moving);
+            total_moving += ind_moving;
+        }
+        if((ros::Time::now() - start_time) > max_duration){
+            ROS_WARN_STREAM("Waiting to complete move exceeded timeout");
+            break;
+        }
+        ros::Duration(0.05).sleep();
+    }
+    return total_moving == 0;
+}
+
+bool AttocubeHardwareInterface::sendDesiredPosition(std::string& joint_name, double value) {
+    // Assume the position is in metres or radians
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        if(actor->second.actor_type_ == ECC_actorLinear) {
+            actor->second.desired_position_ = toNanoMetre(value);
+        } else{
+            actor->second.desired_position_ = toMicroDegree(value);
+        }
+        writePositions();
+        return true;
+    } else {
+        ROS_ERROR_STREAM("Unknown actor for " << joint_name);
+        return false;
+    }
+}
+
+bool AttocubeHardwareInterface::checkMoving(std::string &joint_name) {
+    int ind_moving = -1;
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        ECC_getStatusMoving(actor->second.device_, actor->second.axis_, &ind_moving);
+    } else {
+        ROS_ERROR_STREAM("Unknown actor for " << joint_name);
+    }
+
+    return ind_moving == 1;
+}
+
+double AttocubeHardwareInterface::getCurrentPosition(std::string &joint_name) {
+    readPositions();
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        if(actor->second.actor_type_ == ECC_actorLinear) {
+            return toMetre(actor->second.current_position_);
+        } else{
+            return toRadian(actor->second.current_position_);
+        }
+    } else {
+        ROS_ERROR_STREAM("Unknown actor for " << joint_name);
+    }
+    return 0;
 }
 
 
@@ -217,23 +350,42 @@ int main( int argc, char ** argv ) {
         ROS_INFO_STREAM("Devices setup");
         interface.getHardcodedConfig();
         interface.setupActors();
-        interface.setupInterfaces();
-        ros::Duration(0.1).sleep();
-        auto axis = 0;
-        interface.printActorInformation(interface.devices_[0], axis);
-        axis = 1;
-        interface.printActorInformation(interface.devices_[0], axis);
-        axis = 2;
-        interface.printActorInformation(interface.devices_[0], axis);
+        interface.getReferenceValues();
+        interface.enableActors(true);
         ros::Duration(0.1).sleep();
 
-        sensor_msgs::JointState joint_state;
-        while(ros::ok()){
-            interface.generateJointStateMsg(joint_state);
-            interface.publisher_joint_state_.publish(joint_state);
-            ros::spinOnce();
-            ros::Duration(0.001).sleep();
-        }
+        interface.readPositions();
+
+        interface.homeAllActors();
+
+        double current_position, previous_position, desired_position;
+        bool is_moving;
+        std::string joint = "x_axis";
+
+        current_position = interface.getCurrentPosition(joint);
+        is_moving = interface.checkMoving(joint);
+        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is stationary: " << is_moving);
+        desired_position = current_position + 0.01; // Move 10 mm
+        interface.sendDesiredPosition(joint, desired_position);
+        is_moving = interface.checkMoving(joint);
+        ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
+        ros::Duration(5).sleep();
+        previous_position = current_position;
+        current_position = interface.getCurrentPosition(joint);
+        ROS_INFO_STREAM("New position is " << current_position << " which is " << current_position-previous_position << " from the original position");
+
+        joint = "goni";
+        current_position = interface.getCurrentPosition(joint);
+        is_moving = interface.checkMoving(joint);
+        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is stationary: " << is_moving);
+        desired_position = current_position + angles::from_degrees(10); // Move 10 mm
+        interface.sendDesiredPosition(joint, desired_position);
+        is_moving = interface.checkMoving(joint);
+        ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
+        ros::Duration(5).sleep();
+        previous_position = current_position;
+        current_position = interface.getCurrentPosition(joint);
+        ROS_INFO_STREAM("New position is " << current_position << " which is " << current_position-previous_position << " from the original position");
 
     } else{
         ROS_ERROR_STREAM("No devices available");
