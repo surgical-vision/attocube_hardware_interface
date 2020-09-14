@@ -28,9 +28,12 @@ public:
 
     // Controller communication functions
     void readPositions();
+    void readSinglePosition(std::string& joint_name);
     void writePositions();
+    void writeSinglePosition(std::string& joint_name);
     int getDevicesAvailable();
     bool enableActors(bool on);
+    bool enableSingleActor(std::string& joint_name, bool on);
     void getReferenceValues();
     void pushActorSettings();
 
@@ -42,6 +45,7 @@ public:
     bool sendDesiredPosition(std::string& joint_name, double value);
     bool checkMoving(std::string& joint_name);
     double getCurrentPosition(std::string& joint_name);
+    bool resetPositions();
 
     ros::NodeHandle nh_;
     std::vector<int> devices_, devices_available_;

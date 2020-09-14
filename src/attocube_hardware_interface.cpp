@@ -10,6 +10,11 @@ AttocubeHardwareInterface::AttocubeHardwareInterface(ros::NodeHandle& nh) {
 }
 
 AttocubeHardwareInterface::~AttocubeHardwareInterface() {
+    if(enableActors(false)){
+        ROS_WARN_STREAM("All actors disabled");
+    } else{
+        ROS_WARN_STREAM("Actors were not disabled");
+    }
     if(!devices_.empty()){
         for(const auto &dev : devices_){
             ROS_WARN_STREAM("Closing device number: " << dev);
@@ -59,7 +64,19 @@ void AttocubeHardwareInterface::readPositions() {
             ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to enable output with the error message: " << getECCErrorMessage(rc));
         }
     }
+}
 
+void AttocubeHardwareInterface::readSinglePosition(std::string &joint_name) {
+    int rc;
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        actor->second.resetPostion();
+        rc = ECC_getPosition(actor->second.device_, actor->second.axis_, &actor->second.current_position_);
+        actor->second.current_read_time_ = ros::Time::now();
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to enable output with the error message: " << getECCErrorMessage(rc));
+        }
+    }
 }
 
 void AttocubeHardwareInterface::writePositions() {
@@ -68,6 +85,17 @@ void AttocubeHardwareInterface::writePositions() {
         rc = ECC_controlTargetPosition(actor.second.device_, actor.second.axis_, &actor.second.desired_position_, 1);
         if(rc != NCB_Ok){
             ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the desired position with the error message: " << getECCErrorMessage(rc));
+        }
+    }
+}
+
+void AttocubeHardwareInterface::writeSinglePosition(std::string &joint_name) {
+    int rc;
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        rc = ECC_controlTargetPosition(actor->second.device_, actor->second.axis_, &actor->second.desired_position_, 1);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set the desired position with the error message: " << getECCErrorMessage(rc));
         }
     }
 }
@@ -123,15 +151,20 @@ void AttocubeHardwareInterface::getHardcodedConfig() {
     ROS_WARN_STREAM("Using hardcoded configuration");
     actors_.emplace("x_axis", AttocubeActor(1, 0, "x_axis", ECSx5050));
     actors_.emplace("y_axis", AttocubeActor(1, 1, "y_axis", ECSx5050));
+    actors_.emplace("z_axis", AttocubeActor(2, 0, "z_axis", ECSx5050));
     actors_.emplace("goni", AttocubeActor(1, 2, "goni", ECGp5050));
 }
 
 void AttocubeHardwareInterface::setupActors() {
     ROS_INFO_STREAM("Setting up actors from config");
+    int rc;
     if(!actors_.empty()){
         for(auto& actor : actors_){
-            ECC_controlActorSelection(devices_[actor.second.device_], actor.second.axis_,
+            rc = ECC_controlActorSelection(actor.second.device_, actor.second.axis_,
                                       actor.second.getType(), 1);
+            if(rc != NCB_Ok){
+                ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the control amplitude with the error message: " << getECCErrorMessage(rc));
+            }
         }
     } else{
         ROS_ERROR_STREAM("No actors are configured");
@@ -141,11 +174,15 @@ void AttocubeHardwareInterface::setupActors() {
 
 bool AttocubeHardwareInterface::enableActors(bool on) {
     readPositions();
+    for(auto& actor : actors_) {
+        actor.second.desired_position_ = actor.second.current_position_;
+    }
+
+    writePositions();
+
     int val = (int)on;
     int rc = 0, total_rc = 0;
     for(auto& actor : actors_){
-        actor.second.desired_position_ = actor.second.current_position_;
-
         rc = ECC_controlOutput(actor.second.device_, actor.second.axis_, &val, 1);
         total_rc += rc;
         if(rc != NCB_Ok){
@@ -155,6 +192,33 @@ bool AttocubeHardwareInterface::enableActors(bool on) {
         total_rc += rc;
         if(rc != NCB_Ok){
             ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to setup control move with the error message: " << getECCErrorMessage(rc));
+        }
+    }
+    if(total_rc == 0){
+        return true;
+    } else{
+        ROS_ERROR_STREAM("Some or all actuators have not been enabled");
+        return false;
+    }
+}
+
+bool AttocubeHardwareInterface::enableSingleActor(std::string &joint_name, bool on) {
+    readPositions();
+    int val = (int)on;
+    int rc = 0, total_rc = 0;
+    auto actor = actors_.find(joint_name);
+    if(actor != actors_.end()){
+        actor->second.desired_position_ = actor->second.current_position_;
+        writeSinglePosition(actor->second.joint_name_);
+        rc = ECC_controlOutput(actor->second.device_, actor->second.axis_, &val, 1);
+        total_rc += rc;
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to enable output with the error message: " << getECCErrorMessage(rc));
+        }
+        rc = ECC_controlMove(actor->second.device_, actor->second.axis_, &val, 1);
+        total_rc += rc;
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to setup control move with the error message: " << getECCErrorMessage(rc));
         }
     }
     if(total_rc == 0){
@@ -189,6 +253,10 @@ void AttocubeHardwareInterface::pushActorSettings() {
         rc = ECC_controlFrequency(actor.second.device_, actor.second.axis_, &actor.second.frequency_, 1);
         if(rc != NCB_Ok){
             ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the control frequency with the error message: " << getECCErrorMessage(rc));
+        }
+        rc = ECC_controlTargetRange(actor.second.device_, actor.second.axis_, &actor.second.target_range, 1);
+        if(rc != NCB_Ok){
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to set the target range with the error message: " << getECCErrorMessage(rc));
         }
     }
 }
@@ -241,13 +309,8 @@ bool AttocubeHardwareInterface::findEOTLimits(std::string &joint_name, int direc
             }
 
             // Reenable output now the EOT has been found
-            rc = ECC_controlOutput(actor->second.device_, actor->second.axis_, &on, 1);
-            if(rc != NCB_Ok){
-            ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set the re enable the actor output with the error message: " << getECCErrorMessage(rc));
-            }
-            rc = ECC_controlMove(actor->second.device_, actor->second.axis_, &on, 1);
-            if(rc != NCB_Ok){
-                ROS_ERROR_STREAM("Actor for " << actor->first << " joint failed to set the re enable the actor control move with the error message: " << getECCErrorMessage(rc));
+            if(enableSingleActor(actor->second.joint_name_, true)){
+                ROS_INFO_STREAM("Actor for " << actor->first << " has been re-enabled");
             }
 
         } else{
@@ -279,20 +342,27 @@ bool AttocubeHardwareInterface::waitForAllActorsHalt(int timeout) {
     int ind_moving = -1, total_moving = -1;
     ros::Time start_time = ros::Time::now();
     ros::Duration max_duration(timeout);
+    ros::Rate rate(2);
 
-    while(total_moving != 0){
+    while(total_moving != actors_.size()){
         total_moving = 0;
+        readPositions();
         for(auto& actor : actors_){
-            ECC_getStatusMoving(actor.second.device_, actor.second.axis_, &ind_moving);
+//            ECC_getStatusMoving(actor.second.device_, actor.second.axis_, &ind_moving);
+            ECC_getStatusTargetRange(actor.second.device_, actor.second.axis_, &ind_moving);
+
             total_moving += ind_moving;
+            ROS_DEBUG_STREAM("Current moving status of " << actor.first << ": " << ind_moving <<
+                "\nCurrent position: " << actor.second.current_position_ << "\tDesired position: " << actor.second.desired_position_ << std::endl);
         }
+        readPositions();
         if((ros::Time::now() - start_time) > max_duration){
             ROS_WARN_STREAM("Waiting to complete move exceeded timeout");
             break;
         }
-        ros::Duration(0.05).sleep();
+        rate.sleep();
     }
-    return total_moving == 0;
+    return total_moving == actors_.size();
 }
 
 bool AttocubeHardwareInterface::sendDesiredPosition(std::string& joint_name, double value) {
@@ -320,12 +390,11 @@ bool AttocubeHardwareInterface::checkMoving(std::string &joint_name) {
     } else {
         ROS_ERROR_STREAM("Unknown actor for " << joint_name);
     }
-
     return ind_moving == 1;
 }
 
 double AttocubeHardwareInterface::getCurrentPosition(std::string &joint_name) {
-    readPositions();
+    readSinglePosition(joint_name);
     auto actor = actors_.find(joint_name);
     if(actor != actors_.end()){
         if(actor->second.actor_type_ == ECC_actorLinear) {
@@ -339,24 +408,41 @@ double AttocubeHardwareInterface::getCurrentPosition(std::string &joint_name) {
     return 0;
 }
 
+bool AttocubeHardwareInterface::resetPositions() {
+    ROS_WARN_STREAM("Reseting position for each actor, current position will be set to zero and the reference value will be invalid");
+    int ind_rc, total_rc = 0;
+    for(auto& actor : actors_){
+        ind_rc = ECC_setReset(actor.second.device_, actor.second.axis_);
+        total_rc += ind_rc;
+    }
+    return total_rc == NCB_Ok;
+}
+
 
 int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");
     ros::NodeHandle nh;
     AttocubeHardwareInterface interface(nh);
 
-    if (interface.getDevicesAvailable() > 0) {
+    if (interface.getDevicesAvailable() > 1) {
         interface.setupDevices();
         ROS_INFO_STREAM("Devices setup");
         interface.getHardcodedConfig();
+        ROS_INFO_STREAM("Setting up actors");
         interface.setupActors();
+        ROS_INFO_STREAM("Enabling Actors");
         interface.getReferenceValues();
         interface.enableActors(true);
         ros::Duration(0.1).sleep();
-
+        //interface.resetPositions();
         interface.readPositions();
+        interface.getReferenceValues();
 
         interface.homeAllActors();
+
+        ros::Duration(2).sleep();
+        interface.getReferenceValues();
+        ros::Duration(1).sleep();
 
         double current_position, previous_position, desired_position;
         bool is_moving;
@@ -364,7 +450,7 @@ int main( int argc, char ** argv ) {
 
         current_position = interface.getCurrentPosition(joint);
         is_moving = interface.checkMoving(joint);
-        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is stationary: " << is_moving);
+        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is moving: " << is_moving);
         desired_position = current_position + 0.01; // Move 10 mm
         interface.sendDesiredPosition(joint, desired_position);
         is_moving = interface.checkMoving(joint);
@@ -377,15 +463,15 @@ int main( int argc, char ** argv ) {
         joint = "goni";
         current_position = interface.getCurrentPosition(joint);
         is_moving = interface.checkMoving(joint);
-        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is stationary: " << is_moving);
-        desired_position = current_position + angles::from_degrees(10); // Move 10 mm
+        ROS_INFO_STREAM("Current position of " << joint << ": " << angles::to_degrees(current_position) << " deg\nJoint is moving: " << is_moving);
+        desired_position = current_position + angles::from_degrees(1); // Move 10 mm
         interface.sendDesiredPosition(joint, desired_position);
         is_moving = interface.checkMoving(joint);
         ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
         ros::Duration(5).sleep();
         previous_position = current_position;
         current_position = interface.getCurrentPosition(joint);
-        ROS_INFO_STREAM("New position is " << current_position << " which is " << current_position-previous_position << " from the original position");
+        ROS_INFO_STREAM("New position is " << angles::to_degrees(current_position) << " which is " << angles::to_degrees(current_position-previous_position) << " from the original position");
 
     } else{
         ROS_ERROR_STREAM("No devices available");

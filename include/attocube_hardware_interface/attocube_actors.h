@@ -31,10 +31,11 @@ public:
     ros::Time previous_read_time_;
     ros::Time current_read_time_;
     int home_direction_ = 0;
+    int target_range = 10;
 
     AttocubeActor(int device, int axis, std::string joint_name, int actor_type) :
             device_(device), axis_(axis), joint_name_(std::move(joint_name)), actor_type_(actor_type) {
-        amplitude_ = 30333;
+        amplitude_ = 40333;
         frequency_ = 2222222;
     };
 
