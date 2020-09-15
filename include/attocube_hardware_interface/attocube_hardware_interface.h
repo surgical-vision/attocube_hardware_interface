@@ -8,13 +8,13 @@
 #include <string>
 #include <vector>
 #include <attocube_hardware_interface/attocube_actors.h>
+#include <attocube_hardware_interface/attocube_utils.h>
 #include <hardware_interface/hardware_interface.h>
 #include <ros/ros.h>
 #include <ecc.h>
 #include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_srvs/SetBool.h>
-
 
 class AttocubeHardwareInterface {
 public:

@@ -9,20 +9,27 @@
 #include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_srvs/SetBool.h>
+#include <std_srvs/Trigger.h>
 #include <attocube_hardware_interface/attocube_hardware_interface.h>
 
 class AttocubeRosInterface{
 public:
     AttocubeRosInterface(ros::NodeHandle& nh);
+    bool hardcodeSetupDevice();
     void generateJointStateMsg(sensor_msgs::JointState& msg);
     bool readJointTrajectoryMsg(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
     void callbackJointTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
-    bool callbackSrvEnableActors(std_srvs::SetBool::Request &request, std_srvs::SetBool::Response &response);
+    bool callbackSrvEnableActors(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response);
+    bool callbackSrvResetActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
+    bool callbackSrvHomeActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
+    void publishJointState();
 
     AttocubeHardwareInterface interface_;
     ros::NodeHandle nh_;
     ros::Publisher publisher_joint_state_;
     ros::Subscriber subscriber_joint_trajectory_;
     ros::ServiceServer service_enable_actors_;
+    ros::ServiceServer service_reset_actors_;
+    ros::ServiceServer service_home_actors_;
 };
 #endif //ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ROS_INTERFACE_H
