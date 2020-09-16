@@ -31,31 +31,33 @@ int main( int argc, char ** argv ) {
 
         double current_position, previous_position, desired_position;
         bool is_moving;
-        std::string joint = "x_axis";
+        std::string joint_x = "x_axis", joint_y = "y_axis", joint_z = "z_axis", joint_goni = "goni";
 
-        current_position = interface.getCurrentPosition(joint);
-        is_moving = interface.checkMoving(joint);
-        ROS_INFO_STREAM("Current position of " << joint << ": " << current_position << " m\nJoint is moving: " << is_moving);
+        current_position = interface.getCurrentPosition(joint_x);
+        is_moving = interface.checkMoving(joint_x);
+        ROS_INFO_STREAM("Current position of " << joint_x << ": " << current_position << " m\nJoint is moving: " << is_moving);
         desired_position = current_position + 0.01; // Move 10 mm
-        interface.sendDesiredPosition(joint, desired_position);
-        is_moving = interface.checkMoving(joint);
+        interface.sendDesiredPosition(joint_x, desired_position);
+        is_moving = interface.checkMoving(joint_x);
         ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
-        ros::Duration(5).sleep();
+        interface.waitForAllActorsHalt(5);
         previous_position = current_position;
-        current_position = interface.getCurrentPosition(joint);
+        current_position = interface.getCurrentPosition(joint_x);
         ROS_INFO_STREAM("New position is " << current_position << " which is " << current_position-previous_position << " from the original position");
 
-        joint = "goni";
-        current_position = interface.getCurrentPosition(joint);
-        is_moving = interface.checkMoving(joint);
-        ROS_INFO_STREAM("Current position of " << joint << ": " << angles::to_degrees(current_position) << " deg\nJoint is moving: " << is_moving);
+
+        // Coordinate motion
+
+        current_position = interface.getCurrentPosition(joint_goni);
+        is_moving = interface.checkMoving(joint_goni);
+        ROS_INFO_STREAM("Current position of " << joint_goni << ": " << angles::to_degrees(current_position) << " deg\nJoint is moving: " << is_moving);
         desired_position = current_position + angles::from_degrees(1); // Move 10 mm
-        interface.sendDesiredPosition(joint, desired_position);
-        is_moving = interface.checkMoving(joint);
+        interface.sendDesiredPosition(joint_goni, desired_position);
+        is_moving = interface.checkMoving(joint_goni);
         ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
         ros::Duration(5).sleep();
         previous_position = current_position;
-        current_position = interface.getCurrentPosition(joint);
+        current_position = interface.getCurrentPosition(joint_goni);
         ROS_INFO_STREAM("New position is " << angles::to_degrees(current_position) << " which is " << angles::to_degrees(current_position-previous_position) << " from the original position");
 
     } else{

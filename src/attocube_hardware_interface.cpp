@@ -416,3 +416,26 @@ bool AttocubeHardwareInterface::resetPositions() {
     }
     return total_rc == NCB_Ok;
 }
+
+bool AttocubeHardwareInterface::allActorsEnabled() {
+    int rc = 0, total_enabled = 0, is_enabled = -1;
+    for(auto& actor : actors_) {
+        rc = ECC_controlOutput(actor.second.device_, actor.second.axis_, &is_enabled, 0);
+        if (rc != NCB_Ok) {
+            ROS_ERROR_STREAM("Actor for " << actor.first << " joint failed to check output with the error message: "
+                                          << getECCErrorMessage(rc));
+        }
+        total_enabled += is_enabled;
+    }
+    return total_enabled == actors_.size();
+}
+
+bool AttocubeHardwareInterface::allActorsReferenced() {
+    getReferenceValues();
+    int is_ref = -1, total_ref = 0;
+    for(auto& actor : actors_) {
+        is_ref = (int) actor.second.reference_valid_;
+        total_ref += is_ref;
+    }
+    return total_ref == actors_.size();
+}

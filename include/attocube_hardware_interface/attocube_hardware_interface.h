@@ -46,6 +46,8 @@ public:
     bool checkMoving(std::string& joint_name);
     double getCurrentPosition(std::string& joint_name);
     bool resetPositions();
+    bool allActorsEnabled();
+    bool allActorsReferenced();
 
     ros::NodeHandle nh_;
     std::vector<int> devices_, devices_available_;
