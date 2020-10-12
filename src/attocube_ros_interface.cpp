@@ -4,14 +4,15 @@
 
 #include <attocube_hardware_interface/attocube_ros_interface.h>
 
-AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh), action_follow_joint_trajectory_(nh_, "FollowJointTrajectory", boost::bind(&AttocubeRosInterface::callbackExecuteFollowJointTrajectory, this, _1), false) {
+// AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh), action_follow_joint_trajectory_(nh_, "FollowJointTrajectory", boost::bind(&AttocubeRosInterface::callbackExecuteFollowJointTrajectory, this, _1), false) {
+AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh) {
     nh_ = nh;
     publisher_joint_state_ = nh_.advertise<sensor_msgs::JointState>("joint_state", 10);
     subscriber_joint_trajectory_ = nh_.subscribe("command_trajectory", 10, &AttocubeRosInterface::callbackJointTrajectory, this);
     service_enable_actors_ = nh_.advertiseService("enable_actors", &AttocubeRosInterface::callbackSrvEnableActors, this);
     service_reset_actors_ = nh_.advertiseService("reset_actors", &AttocubeRosInterface::callbackSrvResetActors, this);
     service_home_actors_ = nh_.advertiseService("home_actors", &AttocubeRosInterface::callbackSrvHomeActors, this);
-    service_enable_action_trajectory_ = nh_.advertiseService("enable_action_trajectory", &AttocubeRosInterface::callbackSrvEnableActionTrajectory, this);
+    // service_enable_action_trajectory_ = nh_.advertiseService("enable_action_trajectory", &AttocubeRosInterface::callbackSrvEnableActionTrajectory, this);
 
 }
 
@@ -106,54 +107,54 @@ bool AttocubeRosInterface::hardcodeSetupDevice() {
     }
 }
 
-void AttocubeRosInterface::callbackExecuteFollowJointTrajectory(control_msgs::FollowJointTrajectoryGoalConstPtr &goal) {
-    int num_of_points = goal->trajectory.points.size();
-    int current_point = 0;
-    bool motion_sent = false, motion_finished = false;
+// void AttocubeRosInterface::callbackExecuteFollowJointTrajectory(control_msgs::FollowJointTrajectoryGoalConstPtr &goal) {
+//     int num_of_points = goal->trajectory.points.size();
+//     int current_point = 0;
+//     bool motion_sent = false, motion_finished = false;
 
-//    trajectory_msgs::JointTrajectory::Ptr trajectory = goal->trajectory);
-    // while not preempted and ros is ok
-    // Send the trajectory point to motioncontroller and wait for it to achieve the position
-    while(!action_follow_joint_trajectory_.isPreemptRequested() && ros::ok() && current_point < num_of_points){
-        if(!motion_sent){
-//            readJointTrajectoryMsg(trajectory, current_point);
-            interface_.writePositions();
-            motion_sent = true;
-        }
+// //    trajectory_msgs::JointTrajectory::Ptr trajectory = goal->trajectory);
+//     // while not preempted and ros is ok
+//     // Send the trajectory point to motioncontroller and wait for it to achieve the position
+//     while(!action_follow_joint_trajectory_.isPreemptRequested() && ros::ok() && current_point < num_of_points){
+//         if(!motion_sent){
+// //            readJointTrajectoryMsg(trajectory, current_point);
+//             interface_.writePositions();
+//             motion_sent = true;
+//         }
 
 
-    }
-    // Find out what broke the loop
+//     }
+//     // Find out what broke the loop
 
-}
+// }
 
-bool AttocubeRosInterface::callbackSrvEnableActionTrajectory(std_srvs::SetBool::Request &request,
-                                                             std_srvs::SetBool::Response &response) {
-    //Check if activating it or disabling it
-    if(request.data != 0) {
-        // Check if the action server is capable of running - actors enabled and position references valid
-        if (!interface_.allActorsEnabled()) {
-            response.message = "Actors are not initialised, initialise the actors before enabling the action sever";
-            ROS_WARN_STREAM(response.message);
-            response.success = false;
-            return response.success;
-        }
-        if (!interface_.allActorsReferenced()) {
-            response.message = "Actors are not referenced, home the actors before enabling the action sever";
-            ROS_WARN_STREAM(response.message);
-            response.success = false;
-            return response.success;
-        }
-        action_follow_joint_trajectory_.start();
-    } else{
-        //Disabling the action server
-        result_follow_joint_trajectory_.error_code = result_follow_joint_trajectory_.INVALID_GOAL;
-        result_follow_joint_trajectory_.error_string = "Goal aborted as action server has been set to shut down";
-        action_follow_joint_trajectory_.setAborted(result_follow_joint_trajectory_);
-        action_follow_joint_trajectory_.shutdown();
-    }
-    return true;
-}
+// bool AttocubeRosInterface::callbackSrvEnableActionTrajectory(std_srvs::SetBool::Request &request,
+//                                                              std_srvs::SetBool::Response &response) {
+//     //Check if activating it or disabling it
+//     if(request.data != 0) {
+//         // Check if the action server is capable of running - actors enabled and position references valid
+//         if (!interface_.allActorsEnabled()) {
+//             response.message = "Actors are not initialised, initialise the actors before enabling the action sever";
+//             ROS_WARN_STREAM(response.message);
+//             response.success = false;
+//             return response.success;
+//         }
+//         if (!interface_.allActorsReferenced()) {
+//             response.message = "Actors are not referenced, home the actors before enabling the action sever";
+//             ROS_WARN_STREAM(response.message);
+//             response.success = false;
+//             return response.success;
+//         }
+//         action_follow_joint_trajectory_.start();
+//     } else{
+//         //Disabling the action server
+//         result_follow_joint_trajectory_.error_code = result_follow_joint_trajectory_.INVALID_GOAL;
+//         result_follow_joint_trajectory_.error_string = "Goal aborted as action server has been set to shut down";
+//         action_follow_joint_trajectory_.setAborted(result_follow_joint_trajectory_);
+//         action_follow_joint_trajectory_.shutdown();
+//     }
+//     return true;
+// }
 
 int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");
