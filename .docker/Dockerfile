@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     ros-noetic-moveit \
     ros-noetic-ros-control \
     ros-noetic-ros-controllers \
-    udev
+    udev \
+    git \
+    ssh \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep update
 
@@ -24,4 +27,3 @@ RUN ldconfig
 WORKDIR /catkin_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/noetic/setup.bash && \
     catkin_make"]
-
