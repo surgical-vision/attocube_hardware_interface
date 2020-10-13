@@ -16,10 +16,11 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_srvs/SetBool.h>
 
-class AttocubeHardwareInterface {
+class AttocubeHardwareInterface{
 public:
     AttocubeHardwareInterface(ros::NodeHandle& nh);
     ~AttocubeHardwareInterface();
+
     // Setup functions
     void getConfigFromParam(); // Setup the number of controller and the actor settings
     void getHardcodedConfig();
@@ -52,6 +53,7 @@ public:
     ros::NodeHandle nh_;
     std::vector<int> devices_, devices_available_;
     std::map<std::string, AttocubeActor> actors_;
+
 
 };
 

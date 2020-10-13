@@ -1,11 +1,11 @@
-FROM ros:melodic
+FROM ros:noetic
 
 RUN apt-get update && apt-get install -y \
-    python-catkin-tools \
-    ros-melodic-rqt \
-    ros-melodic-moveit \
-    ros-melodic-ros-control \
-    ros-melodic-ros-controllers \
+    python3-catkin-tools \
+    ros-noetic-rqt \
+    ros-noetic-moveit \
+    ros-noetic-ros-control \
+    ros-noetic-ros-controllers \
     udev
 
 RUN rosdep update
@@ -22,6 +22,6 @@ RUN cp nhands.rules /etc/udev/rules.d && \
 RUN ldconfig
 
 WORKDIR /catkin_ws/
-RUN ["/bin/bash", "-c", "source /opt/ros/melodic/setup.bash && \
-    catkin build"]
+RUN ["/bin/bash", "-c", "source /opt/ros/noetic/setup.bash && \
+    catkin_make"]
 
