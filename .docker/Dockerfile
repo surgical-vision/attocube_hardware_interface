@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     udev \
     git \
     ssh \
+    usbutils \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep update

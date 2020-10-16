@@ -12,7 +12,7 @@ AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh)
     service_enable_actors_ = nh_.advertiseService("enable_actors", &AttocubeRosInterface::callbackSrvEnableActors, this);
     service_reset_actors_ = nh_.advertiseService("reset_actors", &AttocubeRosInterface::callbackSrvResetActors, this);
     service_home_actors_ = nh_.advertiseService("home_actors", &AttocubeRosInterface::callbackSrvHomeActors, this);
-
+    service_trigger_ros_control_ = nh_.advertiseService("enable_ros_control", &AttocubeRosInterface::callbackSrvStartROSControl, this)
 }
 
 void AttocubeRosInterface::generateJointStateMsg(sensor_msgs::JointState &msg) {
@@ -161,17 +161,49 @@ void AttocubeRosInterface::write(ros::Duration duration) {
 
 }
 
+bool AttocubeRosInterface::callbackSrvStartROSControl(std_srvs::SetBool::Request &request,
+                                                      std_srvs::SetBool::Response &response) {
+    // Check if requesting start or stop
+    // Start request
+    if(request.data == true){
+        // Check if the actors are enabled and referenced
+        bool enabled = interface_.allActorsEnabled();
+        bool referenced = interface_.allActorsReferenced();
+        if(referenced && enabled){
+            enabled_ros_control = true;
+        }
+    }
+    //Stop request
+    else{
+        enabled_ros_control = false;
+    }
+    return true;
+}
+
 int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");
     ros::NodeHandle nh;
+
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
+
     AttocubeRosInterface communication(nh);
+
+    controller_manager::ControllerManager cm(&communication, nh);
     if(communication.hardcodeSetupDevice()){
-        ros::Rate rate(100);
+        communication.register_interfaces();
+        ros::Time current_time, previous_time = ros::Time::now();
+        ros::Duration elapsed_time;
+
         while (ros::ok()){
-            communication.publishJointState();
-            ROS_INFO_STREAM_THROTTLE(1, "Current Cylcle Time: " << rate.cycleTime());
-            ros::spinOnce();
-            rate.sleep();
+            current_time = ros::Time::now();
+            elapsed_time = ros::Duration(current_time - previous_time);
+            previous_time = current_time;
+
+            communication.read(elapsed_time);
+            cm.update(current_time, elapsed_time);
+            communication.write(elapsed_time);
+
         }
         return 0;
     } else{

@@ -150,8 +150,7 @@ void AttocubeHardwareInterface::getHardcodedConfig() {
     ROS_WARN_STREAM("Using hardcoded configuration");
     actors_.emplace("x_axis", AttocubeActor(1, 0, "x_axis", ECSx5050));
     actors_.emplace("y_axis", AttocubeActor(1, 1, "y_axis", ECSx5050));
-    actors_.emplace("z_axis", AttocubeActor(2, 0, "z_axis", ECSx5050));
-    actors_.emplace("goni", AttocubeActor(1, 2, "goni", ECGp5050));
+    actors_.emplace("z_axis", AttocubeActor(1, 2, "z_axis", ECSx5050));
 }
 
 void AttocubeHardwareInterface::setupActors() {

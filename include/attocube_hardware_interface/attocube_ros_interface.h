@@ -42,6 +42,7 @@ public:
     bool callbackSrvEnableActors(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response);
     bool callbackSrvResetActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
     bool callbackSrvHomeActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
+    bool callbackSrvStartROSControl(std_srvs::SetBool::Request &request, std_srvs::SetBool::Response &response);
     void publishJointState();
 
     AttocubeHardwareInterface interface_;
@@ -51,10 +52,12 @@ public:
     ros::ServiceServer service_enable_actors_;
     ros::ServiceServer service_reset_actors_;
     ros::ServiceServer service_home_actors_;
+    ros::ServiceServer service_trigger_ros_control_;
 
     hardware_interface::JointStateInterface jnt_state_interface;
     hardware_interface::PositionJointInterface jnt_pos_interface;
 
+    bool enabled_ros_control = false;
     std::vector<double> current_position_, current_velocity_;
     std::vector<double> command_position_;
     std::vector<std::string> joint_names_;
