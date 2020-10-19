@@ -9,6 +9,7 @@ project(attocube_hardware_interface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
         hardware_interface
+        controller_manager
         std_msgs
         std_srvs
         sensor_msgs
@@ -122,10 +123,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+# Core library
+add_library(${PROJECT_NAME} src/attocube_actors.cpp src/attocube_device_manager.cpp include/attocube_hardware_interface/attocube_device_manager.h)
+
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_example src/example.cpp)
+add_executable(${PROJECT_NAME}_example src/example.cpp src/attocube_actors.cpp)
 set_target_properties(${PROJECT_NAME}_example PROPERTIES OUTPUT_NAME example PREFIX "")
 add_dependencies(${PROJECT_NAME}_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
  target_link_libraries(${PROJECT_NAME}_example

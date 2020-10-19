@@ -56,7 +56,7 @@ void AttocubeHardwareInterface::setupDevices() {
 void AttocubeHardwareInterface::readPositions() {
     int rc;
     for(auto& actor : actors_){
-        actor.second.resetPostion();
+        actor.second.updateCurrentPosition(0);
         rc = ECC_getPosition(actor.second.device_, actor.second.axis_, &actor.second.current_position_);
         actor.second.current_read_time_ = ros::Time::now();
         if(rc != NCB_Ok){
@@ -69,7 +69,7 @@ void AttocubeHardwareInterface::readSinglePosition(std::string &joint_name) {
     int rc;
     auto actor = actors_.find(joint_name);
     if(actor != actors_.end()){
-        actor->second.resetPostion();
+        actor->second.updateCurrentPosition(0);
         rc = ECC_getPosition(actor->second.device_, actor->second.axis_, &actor->second.current_position_);
         actor->second.current_read_time_ = ros::Time::now();
         if(rc != NCB_Ok){
@@ -409,6 +409,10 @@ double AttocubeHardwareInterface::getCurrentPosition(std::string &joint_name) {
 bool AttocubeHardwareInterface::resetPositions() {
     ROS_WARN_STREAM("Reseting position for each actor, current position will be set to zero and the reference value will be invalid");
     int ind_rc, total_rc = 0;
+    for(auto& actor : actors_){
+        actor.second.desired_position_ = 0;
+    }
+    writePositions();
     for(auto& actor : actors_){
         ind_rc = ECC_setReset(actor.second.device_, actor.second.axis_);
         total_rc += ind_rc;

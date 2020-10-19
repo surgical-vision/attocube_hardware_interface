@@ -9,7 +9,7 @@ int main( int argc, char ** argv ) {
     ros::NodeHandle nh;
     AttocubeHardwareInterface interface(nh);
 
-    if (interface.getDevicesAvailable() > 1) {
+    if (interface.getDevicesAvailable() > 0) {
         interface.setupDevices();
         ROS_INFO_STREAM("Devices setup");
         interface.getHardcodedConfig();
@@ -48,17 +48,17 @@ int main( int argc, char ** argv ) {
 
         // Coordinate motion
 
-        current_position = interface.getCurrentPosition(joint_goni);
-        is_moving = interface.checkMoving(joint_goni);
-        ROS_INFO_STREAM("Current position of " << joint_goni << ": " << angles::to_degrees(current_position) << " deg\nJoint is moving: " << is_moving);
-        desired_position = current_position + angles::from_degrees(1); // Move 10 mm
-        interface.sendDesiredPosition(joint_goni, desired_position);
-        is_moving = interface.checkMoving(joint_goni);
-        ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
-        ros::Duration(5).sleep();
-        previous_position = current_position;
-        current_position = interface.getCurrentPosition(joint_goni);
-        ROS_INFO_STREAM("New position is " << angles::to_degrees(current_position) << " which is " << angles::to_degrees(current_position-previous_position) << " from the original position");
+//        current_position = interface.getCurrentPosition(joint_goni);
+//        is_moving = interface.checkMoving(joint_goni);
+//        ROS_INFO_STREAM("Current position of " << joint_goni << ": " << angles::to_degrees(current_position) << " deg\nJoint is moving: " << is_moving);
+//        desired_position = current_position + angles::from_degrees(1); // Move 10 mm
+//        interface.sendDesiredPosition(joint_goni, desired_position);
+//        is_moving = interface.checkMoving(joint_goni);
+//        ROS_INFO_STREAM("joint moving to desired postion: " << is_moving);
+//        ros::Duration(5).sleep();
+//        previous_position = current_position;
+//        current_position = interface.getCurrentPosition(joint_goni);
+//        ROS_INFO_STREAM("New position is " << angles::to_degrees(current_position) << " which is " << angles::to_degrees(current_position-previous_position) << " from the original position");
 
     } else{
         ROS_ERROR_STREAM("No devices available");

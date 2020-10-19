@@ -12,7 +12,11 @@ AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh)
     service_enable_actors_ = nh_.advertiseService("enable_actors", &AttocubeRosInterface::callbackSrvEnableActors, this);
     service_reset_actors_ = nh_.advertiseService("reset_actors", &AttocubeRosInterface::callbackSrvResetActors, this);
     service_home_actors_ = nh_.advertiseService("home_actors", &AttocubeRosInterface::callbackSrvHomeActors, this);
-    service_trigger_ros_control_ = nh_.advertiseService("enable_ros_control", &AttocubeRosInterface::callbackSrvStartROSControl, this)
+    service_trigger_ros_control_ = nh_.advertiseService("enable_ros_control", &AttocubeRosInterface::callbackSrvStartROSControl, this);
+}
+
+AttocubeRosInterface::~AttocubeRosInterface() {
+    ROS_ERROR_STREAM("Interface shutting down");
 }
 
 void AttocubeRosInterface::generateJointStateMsg(sensor_msgs::JointState &msg) {
@@ -93,7 +97,7 @@ bool AttocubeRosInterface::callbackSrvHomeActors(std_srvs::Trigger::Request &req
 }
 
 bool AttocubeRosInterface::hardcodeSetupDevice() {
-    if (interface_.getDevicesAvailable() > 1) {
+    if (interface_.getDevicesAvailable() > 0) {
         interface_.setupDevices();
         ROS_INFO_STREAM("Devices setup");
         interface_.getHardcodedConfig();
@@ -196,15 +200,21 @@ int main( int argc, char ** argv ) {
         ros::Duration elapsed_time;
 
         while (ros::ok()){
-            current_time = ros::Time::now();
-            elapsed_time = ros::Duration(current_time - previous_time);
-            previous_time = current_time;
+            if(communication.enabled_ros_control) {
+                current_time = ros::Time::now();
+                elapsed_time = ros::Duration(current_time - previous_time);
+                previous_time = current_time;
 
-            communication.read(elapsed_time);
-            cm.update(current_time, elapsed_time);
-            communication.write(elapsed_time);
-
+                communication.read(elapsed_time);
+                cm.update(current_time, elapsed_time);
+                communication.write(elapsed_time);
+            } else{
+                ROS_INFO_STREAM_THROTTLE(1, "ROS Control not enabled, current status of actors:"
+                                            "\n\tEnabled: " << communication.interface_.allActorsEnabled() <<
+                                            "\n\tReferenced: " << communication.interface_.allActorsReferenced());
+            }
         }
+        spinner.stop();
         return 0;
     } else{
         ROS_ERROR_STREAM("Devices were not setup properly");
