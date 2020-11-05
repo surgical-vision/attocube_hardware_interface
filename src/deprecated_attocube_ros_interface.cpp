@@ -2,7 +2,7 @@
 // Created by george on 9/11/20.
 //
 
-#include <attocube_hardware_interface/attocube_ros_interface.h>
+#include <attocube_hardware_interface/deprecated_attocube_ros_interface.h>
 
 // AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh), action_follow_joint_trajectory_(nh_, "FollowJointTrajectory", boost::bind(&AttocubeRosInterface::callbackExecuteFollowJointTrajectory, this, _1), false) {
 AttocubeRosInterface::AttocubeRosInterface(ros::NodeHandle &nh) : interface_(nh) {
@@ -19,6 +19,7 @@ AttocubeRosInterface::~AttocubeRosInterface() {
     ROS_ERROR_STREAM("Interface shutting down");
 }
 
+// Deprecated
 void AttocubeRosInterface::generateJointStateMsg(sensor_msgs::JointState &msg) {
     msg.name.clear();
     msg.effort.clear();

@@ -98,6 +98,12 @@ public:
      */
     double estimateVelocity();
 
+    /** @brief set actor type
+     * Sets the actor type within a member variable and sends to the controller
+     * @param type: defined in the attopcube_actors.h
+     * @return
+     */
+    bool setActorType(int type);
 
     // Utils
     bool findEOTLimits(int timeout);

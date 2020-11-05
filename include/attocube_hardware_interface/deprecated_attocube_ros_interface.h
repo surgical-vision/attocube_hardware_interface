@@ -2,15 +2,15 @@
 // Created by george on 9/11/20.
 //
 
-#ifndef ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ROS_INTERFACE_H
-#define ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ROS_INTERFACE_H
+#ifndef ATTOCUBE_HARDWARE_INTERFACE_DEPRECATED_ATTOCUBE_ROS_INTERFACE_H
+#define ATTOCUBE_HARDWARE_INTERFACE_DEPRECATED_ATTOCUBE_ROS_INTERFACE_H
 
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
-#include <attocube_hardware_interface/attocube_hardware_interface.h>
+#include <attocube_hardware_interface/deprecated_attocube_hardware_interface.h>
 #include <controller_manager/controller_manager.h>
 #include <control_toolbox/filters.h>
 #include <hardware_interface/robot_hw.h>
@@ -31,6 +31,9 @@ public:
     ~AttocubeRosInterface();
 
     // Hardware interface functions
+    /** @brief sets up the control interface according to the urdf and yaml param file
+     *
+     */
     void register_interfaces();
     void read(ros::Duration duration);
     void write(ros::Duration duration);
@@ -65,4 +68,4 @@ public:
 
 
 };
-#endif //ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ROS_INTERFACE_H
+#endif //ATTOCUBE_HARDWARE_INTERFACE_DEPRECATED_ATTOCUBE_ROS_INTERFACE_H

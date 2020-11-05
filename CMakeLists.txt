@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(attocube_hardware_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-#add_compile_options(-std=c++17)
+add_compile_options(-std=c++17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -137,21 +137,31 @@ add_dependencies(${PROJECT_NAME}_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${c
          ecc
  )
 
-add_executable(${PROJECT_NAME}_hardware_test src/attocube_hardware_interface.cpp src/attocube_hardware_test.cpp src/attocube_utils.cpp)
-set_target_properties(${PROJECT_NAME}_hardware_test PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
-add_dependencies(${PROJECT_NAME}_hardware_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_hardware_test
+add_executable(${PROJECT_NAME}_hardware_interface src/attocube_hardware_interface.cpp)
+set_target_properties(${PROJECT_NAME}_hardware_interface PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
+add_dependencies(${PROJECT_NAME}_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_hardware_interface
         ${catkin_LIBRARIES}
         ecc
+        ${PROJECT_NAME}
         )
 
-add_executable(${PROJECT_NAME}_ros_interface src/attocube_ros_interface.cpp src/attocube_hardware_interface.cpp src/attocube_utils.cpp)
-set_target_properties(${PROJECT_NAME}_ros_interface PROPERTIES OUTPUT_NAME ros_interface PREFIX "")
-add_dependencies(${PROJECT_NAME}_ros_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_ros_interface
-        ${catkin_LIBRARIES}
-        ecc
-        )
+
+#add_executable(${PROJECT_NAME}_hardware_test src/deprecated_attocube_hardware_interface.cpp src/attocube_hardware_test.cpp src/attocube_utils.cpp)
+#set_target_properties(${PROJECT_NAME}_hardware_test PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
+#add_dependencies(${PROJECT_NAME}_hardware_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(${PROJECT_NAME}_hardware_test
+#        ${catkin_LIBRARIES}
+#        ecc
+#        )
+#
+#add_executable(${PROJECT_NAME}_ros_interface src/deprecated_attocube_ros_interface.cpp src/deprecated_attocube_hardware_interface.cpp src/attocube_utils.cpp)
+#set_target_properties(${PROJECT_NAME}_ros_interface PROPERTIES OUTPUT_NAME ros_interface PREFIX "")
+#add_dependencies(${PROJECT_NAME}_ros_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(${PROJECT_NAME}_ros_interface
+#        ${catkin_LIBRARIES}
+#        ecc
+#        )
 
 #############
 ## Install ##

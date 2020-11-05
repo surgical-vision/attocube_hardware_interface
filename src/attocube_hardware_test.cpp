@@ -2,7 +2,7 @@
 // Created by george on 9/15/20.
 //
 
-#include <attocube_hardware_interface/attocube_hardware_interface.h>
+#include <attocube_hardware_interface/deprecated_attocube_hardware_interface.h>
 
 int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");

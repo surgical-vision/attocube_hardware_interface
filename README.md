@@ -1,7 +1,16 @@
 # Attocube Hardware Interface
 Hardware interface to run attocube stages with the EC100 controller through ROS.
 
-## Build
+## Structure
+There are 2 main classes to this interface: AttocubeActor and AttocubeDeviceManager  
+Attocube actor holds all the actor information and provides member functions for appropriate ECC calls (anything actor 
+specific).  
+Attocube Device Manager manages the communication to the actual conntroller which is mainly opening and closing the 
+connection but also polling the controllers to see what is connected. 
+
+
+## Docker
+### Build
 There is a docker file that contains the packages and all the dependencies. 
 Where the general workflow to build the image:  
 - Clone the repo
@@ -14,7 +23,7 @@ docker build --pull --rm -f ./.docker/Dockerfile  -t attocube_hardware_interface
 ```
 If you are changing the Dockerfile remove the `--rm` tag to keep your intermediate builds. 
 
-## Running
+### Running
 My approach (2.3 from the [ROS guide](http://wiki.ros.org/docker/Tutorials/GUI))
 ```
 docker run -it \
