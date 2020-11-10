@@ -9,6 +9,14 @@ AttocubeDeviceManager::AttocubeDeviceManager() {
 }
 
 AttocubeDeviceManager::~AttocubeDeviceManager() {
+    if(!devices_.empty()){
+        for(const auto &dev : devices_){
+            ROS_WARN_STREAM("Closing device number: " << dev);
+            ECC_Close(dev);
+        }
+    } else{
+        ROS_WARN_STREAM("No devices were initialised");
+    }
 
 }
 
@@ -31,7 +39,6 @@ int AttocubeDeviceManager::getDevicesAvailable() {
     ROS_INFO_STREAM("Found " << dev_count << " devices");
     ECC_ReleaseInfo();
     return devices_available_.size();
-
 }
 
 bool AttocubeDeviceManager::setupAllDevices() {
@@ -44,5 +51,5 @@ bool AttocubeDeviceManager::setupAllDevices() {
             devices_.emplace_back(handle);
         }
     }
-    return false;
+    return devices_.size() != devices_available_.size();
 }

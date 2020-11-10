@@ -1,0 +1,20 @@
+# Valid joint types:
+# ECSx5050    6 - Linear
+# ECGp5050    10 - Goni
+# ECR5050     14 - Rotation
+
+joints:
+    - {
+      name: x_lin_joint,
+      device: 1,
+      axis: 0,
+      type: 6
+    }
+
+    - {
+      name: y_lin_joint,
+      device: 1,
+      axis: 1,
+      type: 6
+    }
+

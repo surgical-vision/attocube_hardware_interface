@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(attocube_hardware_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17)
+#add_compile_options(-std=c++17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
         std_srvs
         sensor_msgs
         roscpp
+        urdf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -106,10 +107,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES attocube_hardware_interface
-#  CATKIN_DEPENDS ros_control roscpp
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES attocube_hardware_interface
+  CATKIN_DEPENDS roscpp
+#  DEPENDS ecc
 )
 
 ###########
@@ -124,7 +125,13 @@ include_directories(
 )
 
 # Core library
-add_library(${PROJECT_NAME} src/attocube_actors.cpp src/attocube_device_manager.cpp include/attocube_hardware_interface/attocube_device_manager.h)
+add_library(${PROJECT_NAME} src/attocube_actors.cpp src/attocube_device_manager.cpp)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PREFIX "lib")
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}
+        ecc
+        ${catkin_LIBRARIES}
+        )
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -133,7 +140,7 @@ add_executable(${PROJECT_NAME}_example src/example.cpp src/attocube_actors.cpp)
 set_target_properties(${PROJECT_NAME}_example PROPERTIES OUTPUT_NAME example PREFIX "")
 add_dependencies(${PROJECT_NAME}_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
  target_link_libraries(${PROJECT_NAME}_example
-   ${catkin_LIBRARIES}
+     ${catkin_LIBRARIES}
          ecc
  )
 
@@ -142,7 +149,6 @@ set_target_properties(${PROJECT_NAME}_hardware_interface PROPERTIES OUTPUT_NAME 
 add_dependencies(${PROJECT_NAME}_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_hardware_interface
         ${catkin_LIBRARIES}
-        ecc
         ${PROJECT_NAME}
         )
 

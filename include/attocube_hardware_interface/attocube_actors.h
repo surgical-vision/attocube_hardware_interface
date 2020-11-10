@@ -6,6 +6,7 @@
 #define ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ACTORS_H
 
 #include <string>
+#include <angles/angles.h>
 #include <openacc.h>
 #include <ros/ros.h>
 #include <ecc.h>
@@ -108,5 +109,15 @@ public:
     // Utils
     bool findEOTLimits(int timeout);
 };
+
+std::string getECCErrorMessage( int code );
+
+int toNanoMetre(double metre);
+
+double toMetre(int nano_metre);
+
+int toMicroDegree(double radian);
+
+double toRadian(int micro_degree);
 
 #endif //ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_ACTORS_H

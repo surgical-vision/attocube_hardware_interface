@@ -55,6 +55,7 @@ public:
 
     hardware_interface::JointStateInterface jnt_state_interface;
     hardware_interface::PositionJointInterface jnt_pos_interface;
+    urdf::Model urdf_model_;
 
     bool enabled_ros_control = false;
     std::vector<double> current_position_, current_velocity_;
