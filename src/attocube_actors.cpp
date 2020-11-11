@@ -16,7 +16,6 @@ int *AttocubeActor::getType() {
     return &actor_type_;
 }
 
-
 double AttocubeActor::estimateVelocity() {
     getRawCurrentPosition();
     double velocity;
@@ -87,6 +86,7 @@ bool AttocubeActor::enableActor(bool on) {
     if (rc != NCB_Ok) {
         return false;
     }
+    enabled_ = on;
     return true;
 }
 
@@ -111,7 +111,6 @@ double AttocubeActor::getCurrentPosition() {
     } else {
         return toRadian(getRawCurrentPosition());
     }
-    return 0;
 }
 
 bool AttocubeActor::findEOTLimits(int timeout) {
@@ -183,6 +182,47 @@ bool AttocubeActor::setActorType(int type) {
     }
 
     return true;
+}
+
+bool AttocubeActor::resetActor() {
+    // Disables actor, resets the position, sets the desired to zero and reenables the actor
+    int rc;
+    bool was_enabled = checkEnabled();
+    if(was_enabled) {
+        enableActor(false);
+    }
+    rc = ECC_setReset(device_, axis_);
+    setRawDesiredPosition(0);
+    if(was_enabled) {
+        enableActor(true);
+    }
+
+    if(rc == NCB_Ok && getRawCurrentPosition() == 0){
+        return true;
+    } else{
+        ROS_ERROR_STREAM("Actor failed to reset\nCurrent raw position: " << getRawCurrentPosition() << "\nECC error message: " << getECCErrorMessage(rc));
+        return false;
+    }
+}
+
+bool AttocubeActor::checkEnabled() const {
+    // TODO: change this to actually check with the controller if the actor is enabled
+    return enabled_;
+}
+
+bool AttocubeActor::checkReference() {
+    int status = 0, ref_position = 0, rc;
+
+    rc = ECC_getStatusReference(device_, axis_, &status);
+    if(rc != NCB_Ok){
+        ROS_ERROR_STREAM("Actor for " << joint_name_ << " joint failed to get status reference with the error message: " << getECCErrorMessage(rc));
+    }
+    ECC_getReferencePosition(device_, axis_, &ref_position);
+    reference_valid_ = status;
+    refernce_position_ = ref_position;
+    ROS_DEBUG_STREAM("Reference for Joint: " << joint_name_ << "\nStatus: " << status << "\nPosition: " << ref_position);
+
+    return reference_valid_;
 }
 
 

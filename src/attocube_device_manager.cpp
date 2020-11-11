@@ -51,5 +51,9 @@ bool AttocubeDeviceManager::setupAllDevices() {
             devices_.emplace_back(handle);
         }
     }
-    return devices_.size() != devices_available_.size();
+    return devices_.size() == devices_available_.size();
+}
+
+bool AttocubeDeviceManager::checkDevicesInitialised() {
+    return !devices_.empty();
 }

@@ -26,6 +26,12 @@ public:
      */
     bool setupAllDevices();
 
+    /** @brief checks if the devices are initialised
+     *  Checks the devices have been connected to and added to the devices_ list
+     *  @return bool for if the devices are initialised
+     */
+     bool checkDevicesInitialised();
+
 private:
     std::vector<int> devices_available_, devices_;
 

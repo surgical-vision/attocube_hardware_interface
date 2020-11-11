@@ -10,7 +10,7 @@
 #include <openacc.h>
 #include <ros/ros.h>
 #include <ecc.h>
-#include <attocube_hardware_interface/attocube_utils.h>
+//#include <attocube_hardware_interface/attocube_utils.h>
 
 #define ECSx5050    6
 #define ECGp5050    10
@@ -25,6 +25,7 @@ public:
     int frequency_; // frequency in mHz
     int amplitude_; // Amplitude in mV
     int actor_type_;
+    bool enabled_;
     int current_position_;
     int previous_position_;
     int desired_position_;
@@ -74,6 +75,11 @@ public:
      */
     bool enableActor(bool on);
 
+    /** @brief checks if actor is enabled
+     * @return bool on the actor being enabled
+     */
+    bool checkEnabled() const;
+
     // Getters
     /** @brief actor type
      * gets the actor type eg: linear, goniometer, rotation
@@ -102,9 +108,20 @@ public:
     /** @brief set actor type
      * Sets the actor type within a member variable and sends to the controller
      * @param type: defined in the attopcube_actors.h
-     * @return
+     * @return estimated velocity in SI units
      */
     bool setActorType(int type);
+
+    /** @brief resets the actor
+     * current position will be set to zero and the reference value will be invalidated
+     * @return success
+     */
+    bool resetActor();
+
+    /** @brief check the actor is referenced (homed)
+     * @return status of actor being referenced
+     */
+    bool checkReference();
 
     // Utils
     bool findEOTLimits(int timeout);

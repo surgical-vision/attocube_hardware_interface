@@ -39,7 +39,9 @@ public:
     void read(ros::Duration duration);
     void write(ros::Duration duration);
 
-    bool hardcodeSetupDevice();
+    void debug_status();
+
+    bool setupDevice();
     bool callbackSrvEnableActors(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response);
     bool callbackSrvResetActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
     bool callbackSrvHomeActors(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
