@@ -6,11 +6,21 @@
 
 AttocubeActor::AttocubeActor(int device, int axis, std::string joint_name, int actor_type) :
         device_(device), axis_(axis), joint_name_(std::move(joint_name)), actor_type_(actor_type) {
-    amplitude_ = 40333;
-    frequency_ = 2222222;
+    amplitude_ = 40333; // 40V
+    frequency_ = 2000000; // 2khz
 
-    setActorType(actor_type_);
+    setConfig();
 };
+
+AttocubeActor::AttocubeActor(int device, int axis, std::string joint_name, int actor_type, int voltage, int frequency) :
+        device_(device), axis_(axis), joint_name_(std::move(joint_name)), actor_type_(actor_type), frequency_(frequency),
+        amplitude_(voltage){
+    setConfig();
+}
+
+bool AttocubeActor::setConfig() {
+    return setActorType(actor_type_) && setActorAmplitude(amplitude_) && setActorFrequency(frequency_);
+}
 
 int *AttocubeActor::getType() {
     return &actor_type_;
@@ -225,7 +235,6 @@ bool AttocubeActor::checkReference() {
     return reference_valid_;
 }
 
-
 // Util functions
 std::string getECCErrorMessage( int code )
 {
@@ -247,7 +256,7 @@ int toNanoMetre(double metre){
 }
 
 double toMetre(int nano_metre){
-    return (double) nano_metre / 1e9;
+    return (double) (nano_metre * 1e-9);
 }
 
 int toMicroDegree(double radian){

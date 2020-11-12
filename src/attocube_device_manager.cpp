@@ -34,7 +34,7 @@ int AttocubeDeviceManager::getDevicesAvailable() {
         }
     }
     if(dev_count != devices_available_.size()){
-
+        ROS_WARN_STREAM("Some devices are locked and will not be initialised");
     }
     ROS_INFO_STREAM("Found " << dev_count << " devices");
     ECC_ReleaseInfo();

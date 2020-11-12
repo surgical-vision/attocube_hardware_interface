@@ -8,7 +8,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     build-essential \
     ros-noetic-rqt \
-    ros-noetic-moveit \
+    ros-noetic-rqt-joint-trajectory-controller \
+    ros-noetic-rqt-console \
+    ros-noetic-rqt-logger-level \
     ros-noetic-ros-control \
     ros-noetic-ros-controllers \
     ros-noetic-robot-state-publisher \

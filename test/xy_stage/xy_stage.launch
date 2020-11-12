@@ -2,12 +2,13 @@
 <launch>
     <arg name="name" default="xy_stage"/>
     <arg name="hardware_interface" default="PositionJointInterface"/>
-    <arg name="controllers" default="joint_state_controller $(arg hardware_interface)_trajectory_controller"/>
+<!--    <arg name="controllers" default="joint_state_controller $(arg hardware_interface)_trajectory_controller"/>-->
+    <arg name="controllers" default="joint_state_controller PositionJointInterface_x_controller PositionJointInterface_y_controller"/>
     <arg name="test" default="true"/>
 
-    <group if="$(arg test)">
+<!--    <group if="$(arg test)">-->
         <param name="robot_description" command="xacro '$(find micro_resector_description)/urdf/xy_stage.urdf.xacro' hardware_interface:=$(arg hardware_interface)" />
-    </group>
+<!--    </group>-->
 
     <group ns="$(arg name)">
         <rosparam command="load" file="$(find attocube_hardware_interface)/test/xy_stage/joint_names.yaml" />

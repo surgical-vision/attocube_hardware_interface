@@ -37,6 +37,7 @@ public:
     int target_range = 10;
 
     AttocubeActor(int device, int axis, std::string joint_name, int actor_type);
+    AttocubeActor(int device, int axis, std::string joint_name, int actor_type, int voltage, int frequency);
     ~AttocubeActor();
 
     // Setters
@@ -125,6 +126,8 @@ public:
 
     // Utils
     bool findEOTLimits(int timeout);
+
+    bool setConfig();
 };
 
 std::string getECCErrorMessage( int code );

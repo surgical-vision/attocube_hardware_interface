@@ -19,7 +19,12 @@ AttocubeHardwareInterface::~AttocubeHardwareInterface() {
 }
 
 bool AttocubeHardwareInterface::setupDevice() {
-    device_manager_.getDevicesAvailable();
+    int available = device_manager_.getDevicesAvailable();
+    ROS_INFO_STREAM("Number of devices available: " << available);
+    if (available == 0){
+        ROS_ERROR_STREAM("No devices available, exiting");
+        return false;
+    }
     return device_manager_.setupAllDevices();
 }
 
@@ -33,7 +38,7 @@ void AttocubeHardwareInterface::register_interfaces() {
     joint_names_.clear();
 
     XmlRpc::XmlRpcValue joints;
-    int axis, device, type;
+    int axis, device, type, voltage, frequency;
     std::string joint_name;
 
     if ( nh_.getParam("joints", joints) ) {
@@ -42,10 +47,13 @@ void AttocubeHardwareInterface::register_interfaces() {
             axis = sublist["axis"];
             device = sublist["device"]; //TODO: check if device exists eg. devices_available_.size < device;
             type = sublist["type"];
+            voltage = sublist["voltage"];
+            frequency = sublist["frequency"];
             joint_name = (std::string)sublist["name"];
             ROS_INFO_STREAM("Initialising Actor with the following config: \n\tDevice: " << device
-                << "\n\tAxis: " << axis << "\n\tJoint name: " << joint_name << "\n\tType: " << type); //TODO: Change type to string
-            actors_.emplace_back(device, axis, joint_name, type);
+                << "\n\tAxis: " << axis << "\n\tJoint name: " << joint_name << "\n\tType: " << type
+                << "\n\tVoltage: " << voltage << "\n\tFrequency: " << frequency); //TODO: Change the type field to string
+            actors_.emplace_back(device, axis, joint_name, type, voltage, frequency);
             joint_names_.emplace_back(joint_name);
         }
         ROS_INFO_STREAM("Actors initialised");
@@ -191,7 +199,7 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
     if(device_manager_.checkDevicesInitialised()) {
         bool success = false;
         for (auto &actor : actors_) {
-            success = actor.findEOTLimits(10); //TODO: param or send with the request
+            success = actor.findEOTLimits(20); //TODO: param or send with the request
             if(!success){
                 message << "Actor for " << actor.joint_name_ << " failed to find limit\n";
             }
@@ -202,7 +210,7 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
             for (auto &actor : actors_) {
                 actor.setRawDesiredPosition(0);
             }
-            message << "All actors successfully reset\n";
+            message << "All actors successfully homed\n";
             response.message = message.str();
             response.success = true;
             return true;
@@ -226,6 +234,7 @@ bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Re
         for(auto &actor : actors_){
             ref = actor.checkReference();
             enabled = actor.checkEnabled();
+            ROS_INFO_STREAM("Joint: " << actor.joint_name_ << "\tReferenced: " << ref << "\tEnabled: " << enabled);
             if (ref && enabled){
                 ready++;
             }
@@ -237,8 +246,9 @@ bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Re
             response.message = "ROS control interface enabled";
             return true;
         } else{
+            ROS_WARN_STREAM("Actors not ready, failed to initialise ros control interface");
             response.success = false;
-            response.message = "Actors not ready, failed to intialise ros control interface";
+            response.message = "Actors not ready, failed to initialise ros control interface";
             return false;
         }
     } else{
@@ -252,14 +262,14 @@ bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Re
         response.success = true;
         return true;
     }
-
 }
 
 void AttocubeHardwareInterface::debug_status() {
     std::stringstream status;
     for(int i = 0; i < joint_names_.size(); i++){
-        status << "Joint: " << joint_names_[i] << "\tCurrent Position: " << current_position_[i] << "Desired position: " << command_position_[i] << std::endl;
+        status << std::endl << "Joint: " << joint_names_[i] << "\tCurrent Position: " << current_position_[i] << "\tDesired position: " << command_position_[i];
     }
+    status << std::endl;
     ROS_DEBUG_STREAM(status.str());
 }
 
@@ -267,7 +277,7 @@ int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");
     ros::NodeHandle nh("/xy_stage");
 
-    ros::AsyncSpinner spinner(1);
+    ros::AsyncSpinner spinner(2);
     spinner.start();
 
     AttocubeHardwareInterface interface(nh);
@@ -283,24 +293,23 @@ int main( int argc, char ** argv ) {
     ros::Time current_time, previous_time = ros::Time::now();
     ros::Duration elapsed_time;
 
-    ros::Rate rate(100); //param this
-
+    ROS_INFO_STREAM("Entering main control loop");
     while(ros::ok()){
         current_time = ros::Time::now();
         elapsed_time = ros::Duration(current_time - previous_time);
         previous_time = current_time;
 
+        interface.read(elapsed_time);
+        cm.update(current_time, elapsed_time);
+
         if(interface.enabled_ros_control){
-            interface.read(elapsed_time);
-            cm.update(current_time, elapsed_time);
             interface.write(elapsed_time);
         } else{
             ROS_DEBUG_STREAM_THROTTLE(10, "control interface not running"); // add status of actors and devices
         }
         interface.debug_status();
-        ROS_DEBUG_STREAM_THROTTLE(1, "Rate cycle time: " << rate.cycleTime().toSec());
-        rate.sleep();
     }
+    ROS_WARN_STREAM("Hardware interface shutting down");
 
     spinner.stop();
     return 0;
