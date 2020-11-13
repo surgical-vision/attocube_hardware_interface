@@ -26,10 +26,10 @@
         </node>
 
         <!-- Hardware interface to be loaded /-->
-        <param name="interface" value="$(arg hardware_interface)"/>
+<!--        <param name="interface" value="$(arg hardware_interface)"/>-->
         <!-- the real hardware interface /-->
         <group unless="$(arg test)">
-            <node name="attocube_hardware" pkg="attocube_hardware_interface" type="hardware_interface" respawn="false" output="screen"/>
+            <node name="attocube_hardware" pkg="attocube_hardware_interface" type="hardware_interface" respawn="false" output="screen" required="true"/>
         </group>
 
 
