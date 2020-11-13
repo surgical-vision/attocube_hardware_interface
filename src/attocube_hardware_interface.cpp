@@ -14,8 +14,10 @@ AttocubeHardwareInterface::AttocubeHardwareInterface(ros::NodeHandle& nh) {
 
 AttocubeHardwareInterface::~AttocubeHardwareInterface() {
     ROS_ERROR_STREAM("Interface shutting down");
-    //TODO: stop and disable all actors
-    //TODO: close connection to controllers
+    for(auto &actor : actors_){
+        actor.setRawDesiredPosition(actor.getRawCurrentPosition());
+        actor.enableActor(false);
+    }
 }
 
 bool AttocubeHardwareInterface::setupDevice() {
@@ -136,18 +138,18 @@ bool AttocubeHardwareInterface::callbackSrvEnableActors(std_srvs::SetBool::Reque
             success = actor.enableActor(enable);
             if(!success){
                 if(enable) {
-                    message << "Actor for " << actor.joint_name_ << " failed to enable\n";
+                    message << "Actor for " << actor.joint_name_ << " failed to enable" << std::endl;
                 } else{
-                    message << "Actor for " << actor.joint_name_ << " failed to disable\n";
+                    message << "Actor for " << actor.joint_name_ << " failed to disable" << std::endl;
                 }
             }
         }
-        if (message.gcount() == 0){
+        if (message.str().empty()){
             // No messages means all were a success (hopefully)
             if(enable) {
-                message << "All actors successfully enabled\n";
+                message << "All actors successfully enabled";
             } else{
-                message << "All actors successfully disabled\n";
+                message << "All actors successfully disabled";
             }
             response.message = message.str();
             response.success = true;
@@ -175,7 +177,7 @@ bool AttocubeHardwareInterface::callbackSrvResetActors(std_srvs::Trigger::Reques
                 message << "Actor for " << actor.joint_name_ << " failed to reset\n";
             }
         }
-        if (message.tellg() == 0){
+        if (message.str().empty()){
             // No messages means all were a success (hopefully)
             message << "All actors successfully reset\n";
             response.message = message.str();
@@ -187,16 +189,24 @@ bool AttocubeHardwareInterface::callbackSrvResetActors(std_srvs::Trigger::Reques
             return false;
         }
     } else{
-        ROS_ERROR_STREAM("Devices have not been initialised, can't enable actors without the controllers");
+        ROS_ERROR_STREAM("Devices have not been initialised, can't reset actors without a connection to the controllers");
         return false;
     }
 }
 
 bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request &request,
                                                       std_srvs::Trigger::Response &response) {
-    ROS_WARN_STREAM("Homing the position for each actor, ensure each actor is free from potential collisions in their home direction");
+    ROS_WARN_STREAM("Homing the position for each actor, ensure each actor is enabled and free from potential collisions in their home direction");
+    bool enabled;
+    int ready = 0;
+    for(auto &actor : actors_){
+        enabled = actor.checkEnabled();
+        if (enabled){
+            ready++;
+        }
+    }
     std::stringstream message;
-    if(device_manager_.checkDevicesInitialised()) {
+    if(device_manager_.checkDevicesInitialised() && ready == actors_.size()) {
         bool success = false;
         for (auto &actor : actors_) {
             success = actor.findEOTLimits(20); //TODO: param or send with the request
@@ -204,7 +214,7 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
                 message << "Actor for " << actor.joint_name_ << " failed to find limit\n";
             }
         }
-        if (message.tellg() == 0){
+        if (message.str().empty()){
             // No messages means all were a success (hopefully)
             ROS_WARN("Rezeroing all actors");
             for (auto &actor : actors_) {
@@ -270,7 +280,7 @@ void AttocubeHardwareInterface::debug_status() {
         status << std::endl << "Joint: " << joint_names_[i] << "\tCurrent Position: " << current_position_[i] << "\tDesired position: " << command_position_[i];
     }
     status << std::endl;
-    ROS_DEBUG_STREAM(status.str());
+    ROS_INFO_STREAM_THROTTLE(1, status.str());
 }
 
 int main( int argc, char ** argv ) {

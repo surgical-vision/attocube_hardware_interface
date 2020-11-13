@@ -2,8 +2,8 @@
 <launch>
     <arg name="name" default="xy_stage"/>
     <arg name="hardware_interface" default="PositionJointInterface"/>
-<!--    <arg name="controllers" default="joint_state_controller $(arg hardware_interface)_trajectory_controller"/>-->
-    <arg name="controllers" default="joint_state_controller PositionJointInterface_x_controller PositionJointInterface_y_controller"/>
+    <arg name="controllers" default="joint_state_controller $(arg hardware_interface)_trajectory_controller"/>
+<!--    <arg name="controllers" default="joint_state_controller PositionJointInterface_x_controller PositionJointInterface_y_controller"/>-->
     <arg name="test" default="true"/>
 
 <!--    <group if="$(arg test)">-->

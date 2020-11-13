@@ -29,7 +29,7 @@ int *AttocubeActor::getType() {
 double AttocubeActor::estimateVelocity() {
     getRawCurrentPosition();
     double velocity;
-    if (actor_type_ == ECC_actorLinear) {
+    if (actor_type_ == ECSx5050) {
         velocity = toMetre(current_position_ - previous_position_) / (current_read_time_ - previous_read_time_).toSec();
     } else {
         velocity =
@@ -54,7 +54,7 @@ bool AttocubeActor::setRawDesiredPosition(int desired_position) {
 }
 
 bool AttocubeActor::setDesiredPosition(double desired_position) {
-    if (actor_type_ == ECC_actorLinear) {
+    if (actor_type_ == ECSx5050) {
         return setRawDesiredPosition(toNanoMetre(desired_position));
     } else {
         return setRawDesiredPosition(toMicroDegree(desired_position));
@@ -116,7 +116,7 @@ int AttocubeActor::getRawCurrentPosition() {
 }
 
 double AttocubeActor::getCurrentPosition() {
-    if (actor_type_ == ECC_actorLinear) {
+    if (actor_type_ == ECSx5050) {
         return toMetre(getRawCurrentPosition());
     } else {
         return toRadian(getRawCurrentPosition());
@@ -202,7 +202,7 @@ bool AttocubeActor::resetActor() {
         enableActor(false);
     }
     rc = ECC_setReset(device_, axis_);
-    setRawDesiredPosition(0);
+    setRawDesiredPosition(getRawCurrentPosition());
     if(was_enabled) {
         enableActor(true);
     }
@@ -229,7 +229,7 @@ bool AttocubeActor::checkReference() {
     }
     ECC_getReferencePosition(device_, axis_, &ref_position);
     reference_valid_ = status;
-    refernce_position_ = ref_position;
+    reference_position_ = ref_position;
     ROS_DEBUG_STREAM("Reference for Joint: " << joint_name_ << "\nStatus: " << status << "\nPosition: " << ref_position);
 
     return reference_valid_;
@@ -264,5 +264,5 @@ int toMicroDegree(double radian){
 }
 
 double toRadian(int micro_degree){
-    return (double) angles::from_degrees(micro_degree / 1e6);
+    return (double) angles::from_degrees(micro_degree * 1e-6);
 }

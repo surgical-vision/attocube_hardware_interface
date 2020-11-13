@@ -25,12 +25,12 @@ public:
     int frequency_; // frequency in mHz
     int amplitude_; // Amplitude in mV
     int actor_type_;
-    bool enabled_;
+    bool enabled_ = false;
     int current_position_;
     int previous_position_;
     int desired_position_;
-    bool reference_valid_;
-    int refernce_position_;
+    bool reference_valid_ = false;
+    int reference_position_;
     ros::Time previous_read_time_;
     ros::Time current_read_time_;
     int home_direction_ = 0;
