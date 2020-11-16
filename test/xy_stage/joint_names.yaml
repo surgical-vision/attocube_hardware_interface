@@ -1,0 +1,27 @@
+# Valid joint types:
+# ECSx5050    6 - Linear
+# ECGp5050    10 - Goni
+# ECR5050     14 - Rotation
+
+# Frequency - milli Hz (default: 2000000, 2kHz)
+# Voltage - mV (default: 40000, 40V)
+
+joints:
+    - {
+      name: x_lin_joint,
+      device: 1,
+      axis: 0,
+      type: 6,
+      voltage: 40000,
+      frequency: 2000000
+    }
+
+    - {
+      name: y_lin_joint,
+      device: 1,
+      axis: 1,
+      type: 6,
+      voltage: 40000,
+      frequency: 2000000
+    }
+

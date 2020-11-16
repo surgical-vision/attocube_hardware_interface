@@ -9,10 +9,12 @@ project(attocube_hardware_interface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
         hardware_interface
+        controller_manager
         std_msgs
         std_srvs
         sensor_msgs
         roscpp
+        urdf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,10 +107,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES attocube_hardware_interface
-#  CATKIN_DEPENDS ros_control roscpp
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES attocube_hardware_interface
+  CATKIN_DEPENDS roscpp
+#  DEPENDS ecc
 )
 
 ###########
@@ -122,32 +124,50 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+# Core library
+add_library(${PROJECT_NAME} src/attocube_actors.cpp src/attocube_device_manager.cpp)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PREFIX "lib")
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}
+        ecc
+        ${catkin_LIBRARIES}
+        )
+
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_example src/example.cpp)
+add_executable(${PROJECT_NAME}_example src/example.cpp src/attocube_actors.cpp)
 set_target_properties(${PROJECT_NAME}_example PROPERTIES OUTPUT_NAME example PREFIX "")
 add_dependencies(${PROJECT_NAME}_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
  target_link_libraries(${PROJECT_NAME}_example
-   ${catkin_LIBRARIES}
+     ${catkin_LIBRARIES}
          ecc
  )
 
-add_executable(${PROJECT_NAME}_hardware_test src/attocube_hardware_interface.cpp src/attocube_hardware_test.cpp src/attocube_utils.cpp)
-set_target_properties(${PROJECT_NAME}_hardware_test PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
-add_dependencies(${PROJECT_NAME}_hardware_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_hardware_test
+add_executable(${PROJECT_NAME}_hardware_interface src/attocube_hardware_interface.cpp src/attocube_actors.cpp src/attocube_device_manager.cpp)
+set_target_properties(${PROJECT_NAME}_hardware_interface PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
+add_dependencies(${PROJECT_NAME}_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_hardware_interface
         ${catkin_LIBRARIES}
         ecc
         )
 
-add_executable(${PROJECT_NAME}_ros_interface src/attocube_ros_interface.cpp src/attocube_hardware_interface.cpp src/attocube_utils.cpp)
-set_target_properties(${PROJECT_NAME}_ros_interface PROPERTIES OUTPUT_NAME ros_interface PREFIX "")
-add_dependencies(${PROJECT_NAME}_ros_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_ros_interface
-        ${catkin_LIBRARIES}
-        ecc
-        )
+
+#add_executable(${PROJECT_NAME}_hardware_test src/deprecated_attocube_hardware_interface.cpp src/attocube_hardware_test.cpp src/attocube_utils.cpp)
+#set_target_properties(${PROJECT_NAME}_hardware_test PROPERTIES OUTPUT_NAME hardware_interface PREFIX "")
+#add_dependencies(${PROJECT_NAME}_hardware_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(${PROJECT_NAME}_hardware_test
+#        ${catkin_LIBRARIES}
+#        ecc
+#        )
+#
+#add_executable(${PROJECT_NAME}_ros_interface src/deprecated_attocube_ros_interface.cpp src/deprecated_attocube_hardware_interface.cpp src/attocube_utils.cpp)
+#set_target_properties(${PROJECT_NAME}_ros_interface PROPERTIES OUTPUT_NAME ros_interface PREFIX "")
+#add_dependencies(${PROJECT_NAME}_ros_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(${PROJECT_NAME}_ros_interface
+#        ${catkin_LIBRARIES}
+#        ecc
+#        )
 
 #############
 ## Install ##

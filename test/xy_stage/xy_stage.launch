@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="name" default="xy_stage"/>
+    <arg name="hardware_interface" default="PositionJointInterface"/>
+    <arg name="controllers" default="joint_state_controller $(arg hardware_interface)_trajectory_controller"/>
+<!--    <arg name="controllers" default="joint_state_controller PositionJointInterface_x_controller PositionJointInterface_y_controller"/>-->
+    <arg name="test" default="true"/>
+
+<!--    <group if="$(arg test)">-->
+        <param name="robot_description" command="xacro '$(find micro_resector_description)/urdf/xy_stage.urdf.xacro' hardware_interface:=$(arg hardware_interface)" />
+<!--    </group>-->
+
+    <group ns="$(arg name)">
+        <rosparam command="load" file="$(find attocube_hardware_interface)/test/xy_stage/joint_names.yaml" />
+        <rosparam file="$(find attocube_hardware_interface)/test/xy_stage/control.yaml" command="load" />
+    </group>
+
+    <group ns="$(arg name)">
+        <!-- Load the controllers -->
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+              output="screen" args="$(arg controllers) --shutdown-timeout 2" />
+
+        <!-- Converts joint states to TF transforms for rviz, etc -->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+              respawn="false" output="screen">
+        </node>
+
+        <!-- Hardware interface to be loaded /-->
+<!--        <param name="interface" value="$(arg hardware_interface)"/>-->
+        <!-- the real hardware interface /-->
+        <group unless="$(arg test)">
+            <node name="attocube_hardware" pkg="attocube_hardware_interface" type="hardware_interface" respawn="false" output="screen" required="true"/>
+        </group>
+
+
+    </group>
+
+</launch>

@@ -1,0 +1,24 @@
+joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 500
+
+PositionJointInterface_trajectory_controller:
+  type: position_controllers/JointTrajectoryController
+  joints:
+    - x_lin_joint
+    - y_lin_joint
+
+  constraints:
+    goal_time: 0.1                   # Override default
+
+  state_publish_rate:  500            # Override default
+  action_monitor_rate: 500            # Override default
+  stop_trajectory_duration: 0        # Override default
+
+PositionJointInterface_x_controller:
+  type: position_controllers/JointPositionController
+  joint: x_lin_joint
+
+PositionJointInterface_y_controller:
+  type: position_controllers/JointPositionController
+  joint: y_lin_joint
