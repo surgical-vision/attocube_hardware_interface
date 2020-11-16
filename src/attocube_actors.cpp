@@ -202,12 +202,14 @@ bool AttocubeActor::resetActor() {
         enableActor(false);
     }
     rc = ECC_setReset(device_, axis_);
-    setRawDesiredPosition(getRawCurrentPosition());
+    ros::Duration(0.1).sleep();
+    int current_position = getRawCurrentPosition();
+    setRawDesiredPosition(current_position);
     if(was_enabled) {
         enableActor(true);
     }
 
-    if(rc == NCB_Ok && getRawCurrentPosition() == 0){
+    if(rc == NCB_Ok && abs(getRawCurrentPosition()) <= 50){ //Within 50 nanometre of 0 should maybe be parammed but should be fine for now.
         return true;
     } else{
         ROS_ERROR_STREAM("Actor failed to reset\nCurrent raw position: " << getRawCurrentPosition() << "\nECC error message: " << getECCErrorMessage(rc));

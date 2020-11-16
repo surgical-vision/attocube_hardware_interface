@@ -180,10 +180,12 @@ bool AttocubeHardwareInterface::callbackSrvResetActors(std_srvs::Trigger::Reques
         if (message.str().empty()){
             // No messages means all were a success (hopefully)
             message << "All actors successfully reset\n";
+            ROS_INFO_STREAM(message.str());
             response.message = message.str();
             response.success = true;
             return true;
         } else{
+            ROS_ERROR_STREAM(message.str());
             response.message = message.str();
             response.success = false;
             return false;
@@ -227,7 +229,7 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
         } else{
             response.message = message.str();
             response.success = false;
-            return false;
+            return true;
         }
     } else{
         ROS_ERROR_STREAM("Devices have not been initialised, can't home actors without the controllers");
@@ -259,7 +261,7 @@ bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Re
             ROS_WARN_STREAM("Actors not ready, failed to initialise ros control interface");
             response.success = false;
             response.message = "Actors not ready, failed to initialise ros control interface";
-            return false;
+            return true; // It failed but doesn't return the message to say it failed if false
         }
     } else{
         // request to disable ros control
@@ -280,12 +282,12 @@ void AttocubeHardwareInterface::debug_status() {
         status << std::endl << "Joint: " << joint_names_[i] << "\tCurrent Position: " << current_position_[i] << "\tDesired position: " << command_position_[i];
     }
     status << std::endl;
-    ROS_INFO_STREAM_THROTTLE(1, status.str());
+    ROS_DEBUG_STREAM_THROTTLE(1, status.str());
 }
 
 int main( int argc, char ** argv ) {
     ros::init(argc, argv, "attocube_hardware_interface");
-    ros::NodeHandle nh("/xy_stage");
+    ros::NodeHandle nh;
 
     ros::AsyncSpinner spinner(2);
     spinner.start();
