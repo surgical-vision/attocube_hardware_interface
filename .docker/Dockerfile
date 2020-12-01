@@ -41,3 +41,13 @@ WORKDIR /catkin_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/noetic/setup.bash && \
     catkin build"]
 
+RUN mv /catkin_ws/src/attocube_hardware_interface/.docker/attocube_entrypoint.sh /attocube_entrypoint.sh && \
+    mv /catkin_ws/src/attocube_hardware_interface/.docker/nigel_start.sh /nigel_start.sh && \
+    chmod +x /nigel_start.sh && \
+    chmod +x /attocube_entrypoint.sh
+
+ENTRYPOINT [ "/attocube_entrypoint.sh" ]
+CMD ["/bin/bash", "-c", "rosrun attocube_hardware_interface hardware_interface" ]
+
+
+

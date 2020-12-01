@@ -24,6 +24,13 @@ docker build --pull --rm -f ./.docker/Dockerfile  -t attocube_hardware_interface
 If you are changing the Dockerfile remove the `--rm` tag to keep your intermediate builds. 
 
 ### Running
+```
+docker run --rm -it --net=host --privileged attocube_hardware_interface:latest
+```
+To not run the hardware interface add bash to the end
+
+
+#### Development
 My approach (2.3 from the [ROS guide](http://wiki.ros.org/docker/Tutorials/GUI))
 ```
 docker run -it \

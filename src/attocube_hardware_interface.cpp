@@ -35,6 +35,7 @@ void AttocubeHardwareInterface::register_interfaces() {
      * Intilise the actors from the list of joints
     */
 
+    ROS_INFO_STREAM("Registering joint interfaces");
     // TODO: Check they are empty and send out a warning they will be overwritten
     actors_.clear();
     joint_names_.clear();
@@ -44,6 +45,7 @@ void AttocubeHardwareInterface::register_interfaces() {
     std::string joint_name;
 
     if ( nh_.getParam("joints", joints) ) {
+        ROS_INFO_STREAM("got actor settings from joint param");
         for(int i = 0; i < joints.size(); i++) {
             XmlRpc::XmlRpcValue sublist = joints[i];
             axis = sublist["axis"];
@@ -69,6 +71,7 @@ void AttocubeHardwareInterface::register_interfaces() {
         ROS_ERROR("No URDF model in the robot_description parameter, this is required to define the joint limits.");
         throw std::runtime_error("No URDF model available");
     }
+    ROS_INFO_STREAM("URDF initialised");
 
     urdf::JointConstSharedPtr current_joint;
     int i = 0;
@@ -211,9 +214,13 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
     if(device_manager_.checkDevicesInitialised() && ready == actors_.size()) {
         bool success = false;
         for (auto &actor : actors_) {
-            success = actor.findEOTLimits(20); //TODO: param or send with the request
-            if(!success){
-                message << "Actor for " << actor.joint_name_ << " failed to find limit\n";
+            if(actor.actor_type_ != ECR5050){
+                success = actor.findEOTLimits(20); //TODO: param or send with the request
+                if(!success){
+                    message << "Actor for " << actor.joint_name_ << " failed to find limit\n";
+                }
+            }else{
+                ROS_DEBUG_STREAM("No need to home a rotation stage");
             }
         }
         if (message.str().empty()){
