@@ -219,8 +219,15 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
                 if(!success){
                     message << "Actor for " << actor.joint_name_ << " failed to find limit\n";
                 }
-            }else{
-                ROS_DEBUG_STREAM("No need to home a rotation stage");
+            }
+            else if(actor.actor_type_ == ECR5050){
+                success = actor.findRefPosition(20); //TODO: param or send with the request
+                if(!success){
+                    message << "Actor for " << actor.joint_name_ << " failed to find reference position\n";
+                }
+            }
+            else{
+                ROS_DEBUG_STREAM("Unknown actor type for");
             }
         }
         if (message.str().empty()){
@@ -246,6 +253,13 @@ bool AttocubeHardwareInterface::callbackSrvHomeActors(std_srvs::Trigger::Request
 
 bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Request &request,
                                                            std_srvs::SetBool::Response &response) {
+    bool check_force;
+    nh_.param<bool>("force_enable_control", check_force, false);
+
+    if (check_force){
+        ROS_WARN_STREAM("Force enable control has been set to true, the actors will be seen as ready if just enabled");
+    }
+
     if(request.data){ // If request to enable
         // Check the actors have been configured, enabled and homed before enabling the ros control interface
         bool ref, enabled;
@@ -254,7 +268,8 @@ bool AttocubeHardwareInterface::callbackSrvStartROSControl(std_srvs::SetBool::Re
             ref = actor.checkReference();
             enabled = actor.checkEnabled();
             ROS_INFO_STREAM("Joint: " << actor.joint_name_ << "\tReferenced: " << ref << "\tEnabled: " << enabled);
-            if (ref && enabled){
+            // If referenced and enabled or forced and enabled then they are ready
+            if ((ref && enabled) || (check_force && enabled)){
                 ready++;
             }
         }

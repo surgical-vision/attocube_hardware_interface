@@ -131,7 +131,7 @@ bool AttocubeActor::findEOTLimits(int timeout) {
     // Set output to deactivate on finding the end of travel
     rc = ECC_controlEotOutputDeactive(device_, axis_, &on, 1);
     if (rc == NCB_Ok) {
-        // set continous movement in the desired direction
+        // set continuous movement in the desired direction
         if (home_direction_ == 0) {
             ECC_controlContinousBkwd(device_, axis_, &on, 1);
             ECC_getStatusEotBkwd(device_, axis_, &eot_found);
@@ -236,6 +236,66 @@ bool AttocubeActor::checkReference() {
 
     return reference_valid_;
 }
+
+bool AttocubeActor::findRefPosition(int timeout) {
+    int rc, on = 1, off = 0, ref_found = 0;
+    ros::Time start_time;
+    ros::Duration max_duration(timeout);
+    bool timeout_reached = false;
+
+
+    // set continuous movement in the desired direction
+    if (home_direction_ == 0) {
+        ECC_controlContinousBkwd(device_, axis_, &on, 1);
+        ECC_getStatusReference(device_, axis_, &ref_found);
+        start_time = ros::Time::now();
+        while (ref_found != 1) {
+            ECC_getStatusReference(device_, axis_, &ref_found);
+            if ((ros::Time::now() - start_time) > max_duration) {
+                ROS_WARN_STREAM("Finding EOT travel limit exceeded timeout");
+                timeout_reached = true;
+                break;
+            }
+        }
+        if (ref_found == 1) {
+            ROS_INFO_STREAM("EOT limit for " << joint_name_ << " has been found");
+        }
+        ECC_controlContinousBkwd(device_, axis_, &off, 1);
+    } else if (home_direction_ == 1) {
+        ECC_controlContinousFwd(device_, axis_, &on, 1);
+        ECC_getStatusReference(device_, axis_, &ref_found);
+        start_time = ros::Time::now();
+        while (ref_found != 1) {
+            ECC_getStatusReference(device_, axis_, &ref_found);
+            if ((ros::Time::now() - start_time) > max_duration) {
+                ROS_WARN_STREAM("Finding ref position exceeded timeout");
+                timeout_reached = true;
+                break;
+            }
+            ros::Duration(0.05).sleep();
+        }
+        if (ref_found == 1) {
+            ROS_INFO_STREAM("Ref position for " << joint_name_ << " has been found");
+        }
+        ECC_controlContinousFwd(device_, axis_, &off, 1);
+
+    } else {
+        ROS_ERROR_STREAM(
+                "Direction was not 0 for backward or 1 for forward, set the direction to either of those values");
+    }
+
+    // Reenable output now the EOT has been found
+    if (checkReference() && enableActor(true)) {
+        ROS_INFO_STREAM("Actor for " << joint_name_ << " has been re-enabled");
+        return ref_found;
+    } else {
+        if (timeout_reached) {
+            return false;
+        }
+    }
+    return ref_found;
+}
+
 
 // Util functions
 std::string getECCErrorMessage( int code )

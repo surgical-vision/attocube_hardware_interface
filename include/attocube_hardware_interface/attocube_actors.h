@@ -125,7 +125,15 @@ public:
     bool checkReference();
 
     // Utils
+    /**
+     * @brief Runs the actor continuously in a set direction until it hits it's limit.
+     * Should only be used with linear or goni
+     * @param timeout
+     * @return
+     */
     bool findEOTLimits(int timeout);
+
+    bool findRefPosition(int timeout);
 
     bool setConfig();
 };
