@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <ecc.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 class AttocubeDeviceManager{
 public:

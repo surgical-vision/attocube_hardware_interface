@@ -8,7 +8,7 @@
 #include <string>
 #include <angles/angles.h>
 #include <openacc.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <ecc.h>
 //#include <attocube_hardware_interface/attocube_utils.h>
 
@@ -31,8 +31,8 @@ public:
     int desired_position_;
     bool reference_valid_ = false;
     int reference_position_;
-    ros::Time previous_read_time_;
-    ros::Time current_read_time_;
+    rclcpp::Time previous_read_time_;
+    rclcpp::Time current_read_time_;
     int home_direction_ = 0;
     int target_range = 10;
 

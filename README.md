@@ -19,13 +19,13 @@ Where the general workflow to build the image:
 ```
 git clone git@github.com:surgical-vision/attocube_hardware_interface.git
 cd attocube_hardware_interface
-docker build --pull --rm -f ./.docker/Dockerfile  -t attocube_hardware_interface:latest .
+docker build --pull --rm -f ./.docker/Dockerfile  -t attocube_hardware_interface:foxy .
 ```
 If you are changing the Dockerfile remove the `--rm` tag to keep your intermediate builds. 
 
 ### Running
 ```
-docker run --rm -it --net=host --privileged attocube_hardware_interface:latest
+docker run --rm -it --net=host --privileged attocube_hardware_interface:foxy
 ```
 To not run the hardware interface add bash to the end
 
@@ -37,7 +37,7 @@ docker run -it \
     --user=$(id -u $USER):$(id -g $USER) \
     --group-add dialout --group-add sudo \
     --env="DISPLAY" \
-    --workdir="/catkin_ws/src" \
+    --workdir="/dev_ws/src" \
     --volume="/home/$USER:/home/$USER" \
     --volume="/etc/group:/etc/group:ro" \
     --volume="/etc/passwd:/etc/passwd:ro" \
@@ -45,7 +45,7 @@ docker run -it \
     --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
     --privileged \
-    attocube_hardware_interface:latest
+    attocube_hardware_interface:foxy
 ```
 The container needs to be privileged to run as it needs access to the USB, the user added also needs to be in dialout and sudo.
 This should be logging your host user in the container, mounting your home directory within the image and other things like x server info and sudo access.  
@@ -55,4 +55,4 @@ if you are going to use this container for a while then give it name with: `--na
 
 Lastly the repo has been added in the docker process and is owned by root so the user id you've added won't be able to use it.
 Change ownership to the user with 
-`sudo chown -R $UID /catkin_ws/`
+`sudo chown -R $UID /dev_ws/`

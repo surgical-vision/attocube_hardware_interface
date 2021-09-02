@@ -1,0 +1,9 @@
+<library path="attocube_hardware_interface">
+    <class name="attocube_hardware_interface/AttocubeHardwareInterface"
+           type="AttocubeHardwareInterface"
+           base_class_type="hardware_interface::SystemInterface">
+        <description>
+            ROS2 Control System Driver for attocube stages
+        </description>
+    </class>
+</library>

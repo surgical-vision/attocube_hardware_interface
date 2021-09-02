@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="iiwa_position_only" params="name
+    robot_ip robot_port">
+
+        <ros2_control name="${name}" type="system">
+            <hardware>
+                <plugin>attocube_hardware_interface/AttocubeHardwareInterface</plugin>
+            </hardware>
+            <joint name="tweezer_x_lin_joint">
+                <command_interface name="position">
+                    <param name="min">{-0.015}</param>
+                    <param name="max">{0.015}</param>
+                </command_interface>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <param name="device" value="0"/>
+                <param name="axis" value="0"/>
+                <param name="type" value="6"/>
+                <param name="voltage" value="35000"/>
+                <param name="frequency" value="20000"/>
+            </joint>
+        </ros2_control>
+    </xacro:macro>
+
+</robot>
