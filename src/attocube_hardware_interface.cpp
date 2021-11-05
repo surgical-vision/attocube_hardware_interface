@@ -312,7 +312,7 @@ hardware_interface::return_type
 AttocubeHardwareInterface::configure(const hardware_interface::HardwareInfo &system_info) {
     clock_ = rclcpp::Clock(RCL_STEADY_TIME);
     info_ = system_info;
-    
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Entering configure");
     controllers_initialized_ = false;
     
     if(setupDevice()){
@@ -342,9 +342,9 @@ AttocubeHardwareInterface::configure(const hardware_interface::HardwareInfo &sys
             return hardware_interface::return_type::ERROR;
         }
 
-        if (joint.state_interfaces.size() != 3)
+        if (joint.state_interfaces.size() != 2)
         {
-            RCLCPP_FATAL(rclcpp::get_logger("AttocubeHardwareInterface"), "Joint '%s' has %d state interface. 3 expected.",
+            RCLCPP_FATAL(rclcpp::get_logger("AttocubeHardwareInterface"), "Joint '%s' has %d state interface. 2 expected.",
                          joint.name.c_str(), joint.state_interfaces.size());
             return hardware_interface::return_type::ERROR;
         }
@@ -364,17 +364,21 @@ AttocubeHardwareInterface::configure(const hardware_interface::HardwareInfo &sys
                          joint.state_interfaces[1].name.c_str(), hardware_interface::HW_IF_POSITION);
             return hardware_interface::return_type::ERROR;
         }
+
+//        for( const std::pair<std::string, std::string> n : joint.parameters ){
+//            RCLCPP_ERROR_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Key:[" << n.first << "] Value:[" << n.second << "]");
+//        }
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),
+                           "Initialising Actor with the following config: \n\tDevice: " << joint.parameters.find("device")->second
+                            << "\n\tAxis: " << joint.parameters.find("axis")->second << "\n\tJoint name: " << joint.name << "\n\tType: " << joint.parameters.find("type")->second
+                            << "\n\tVoltage: " << joint.parameters.find("voltage")->second << "\n\tFrequency: " << joint.parameters.find("frequency")->second);
+
         int device, axis, type, voltage, frequency;
         device = std::stoi(joint.parameters.find("device")->second);
         type = std::stoi(joint.parameters.find("type")->second);
         axis = std::stoi(joint.parameters.find("axis")->second);
         voltage = std::stoi(joint.parameters.find("voltage")->second);
         frequency = std::stoi(joint.parameters.find("frequency")->second);
-
-        RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),
-                           "Initialising Actor with the following config: \n\tDevice: " << device
-                            << "\n\tAxis: " << axis << "\n\tJoint name: " << joint.name << "\n\tType: " << type
-                            << "\n\tVoltage: " << voltage << "\n\tFrequency: " << frequency); //TODO: Change the type field to string
 
         actors_.emplace_back(device, axis, joint.name, type, voltage, frequency);
         joint_names_.emplace_back(joint.name);
@@ -443,13 +447,17 @@ hardware_interface::return_type AttocubeHardwareInterface::start() {
             }
             status_ = hardware_interface::status::UNKNOWN;
             return hardware_interface::return_type::ERROR;
+        } else{
+            RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Actor for " << actor.joint_name_ << " enabled");
         }
     }
 
     // Home actors
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Starting home procedure for actors");
     success = false;
     for (auto &actor : actors_) {
         if(actor.actor_type_ != ECR5050){
+            RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Starting home procedure for linear actor: " << actor.joint_name_);
             success = actor.findEOTLimits(20); //TODO: param or send with the request
             if(!success){
                 RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),  "Actor for " << actor.joint_name_ << " failed to find limit\n");
@@ -458,6 +466,7 @@ hardware_interface::return_type AttocubeHardwareInterface::start() {
             }
         }
         else if(actor.actor_type_ == ECR5050){
+            RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Starting home procedure for rotational actor: " << actor.joint_name_);
             success = actor.findRefPosition(20); //TODO: param or send with the request
             if(!success){
                 RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),  "Actor for " << actor.joint_name_ << " failed to find reference position\n");
@@ -483,6 +492,7 @@ hardware_interface::return_type AttocubeHardwareInterface::start() {
 }
 
 hardware_interface::return_type AttocubeHardwareInterface::stop() {
+    RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Attocube hardware interface will be stopped, actors will be disabled now" << std::endl);
     bool enable = false;
     bool success = false;
     for (auto &actor : actors_) {
@@ -511,7 +521,13 @@ hardware_interface::return_type AttocubeHardwareInterface::read() {
 }
 
 hardware_interface::return_type AttocubeHardwareInterface::write() {
-    return hardware_interface::return_type::ERROR;
+    int i = 0;
+    for(auto &actor : actors_){
+        //check the values with a joint limits interface
+        actor.setDesiredPosition(command_position_[i]);
+        i++;
+    }
+    return hardware_interface::return_type::OK;
 }
 
 //int main( int argc, char ** argv ) {
