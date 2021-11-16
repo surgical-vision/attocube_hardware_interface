@@ -81,6 +81,21 @@ ament_target_dependencies(${PROJECT_NAME}
 pluginlib_export_plugin_description_file(hardware_interface hardware_interface_plugin.xml)
 
 
+# Utilities
+add_executable(device_identifier
+        src/utils/device_identifier.cpp
+        )
+target_link_libraries(device_identifier
+        ${PROJECT_NAME}
+        )
+
+ament_target_dependencies(device_identifier
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        rclcpp
+        std_srvs
+        )
+
+
 # Installation
 install(
         TARGETS ${PROJECT_NAME}

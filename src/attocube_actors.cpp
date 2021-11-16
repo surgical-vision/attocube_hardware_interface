@@ -125,9 +125,13 @@ double AttocubeActor::getCurrentPosition() {
 
 bool AttocubeActor::findEOTLimits(int timeout) {
     int rc, on = 1, off = 0, eot_found = 0;
-    rclcpp::Time start_time;
-    rclcpp::Duration max_duration(timeout);
+    rclcpp::Time time_start, time_now;
+    rclcpp::Duration max_duration(timeout, 0);
 
+    // Auto reset the zero position when known
+    ECC_controlAutoReset(device_, axis_, &on, 1);
+    // Auto update the ref position when known
+    ECC_controlReferenceAutoUpdate(device_, axis_, &on, 1);
     // Set output to deactivate on finding the end of travel
     rc = ECC_controlEotOutputDeactive(device_, axis_, &on, 1);
     if (rc == NCB_Ok) {
@@ -135,11 +139,15 @@ bool AttocubeActor::findEOTLimits(int timeout) {
         if (home_direction_ == 0) {
             ECC_controlContinousBkwd(device_, axis_, &on, 1);
             ECC_getStatusEotBkwd(device_, axis_, &eot_found);
-            start_time = rclcpp::Clock().now();
+            time_start = rclcpp::Clock().now();
+            RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Start time for " << joint_name_ << " is " << time_start.seconds());
             while (eot_found != 1) {
                 ECC_getStatusEotBkwd(device_, axis_, &eot_found);
-                if ((rclcpp::Clock().now() - start_time) > max_duration) {
-                    RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),"Finding EOT travel limit exceeded timeout");
+                time_now = rclcpp::Clock().now();
+                if ((time_now - time_start) > max_duration) {
+                    RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),"Finding EOT travel limit exceeded timeout\n");
+                    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Start time for " << joint_name_ << " is " << time_start.seconds() << " and end time is " << time_now.seconds() <<
+                    " with difference of " << (time_now - time_start).seconds());
                     break;
                 }
             }
@@ -150,11 +158,14 @@ bool AttocubeActor::findEOTLimits(int timeout) {
         } else if (home_direction_ == 1) {
             ECC_controlContinousFwd(device_, axis_, &on, 1);
             ECC_getStatusEotFwd(device_, axis_, &eot_found);
-            start_time = rclcpp::Clock().now();
+            time_start = rclcpp::Clock().now();
             while (eot_found != 1) {
                 ECC_getStatusEotFwd(device_, axis_, &eot_found);
-                if ((rclcpp::Clock().now() - start_time) > max_duration) {
-                    RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),"Finding EOT travel limit exceeded timeout");
+                time_now = rclcpp::Clock().now();
+                if ((time_now - time_start) > max_duration) {
+                    RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),"Finding EOT travel limit exceeded timeout\n");
+                    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Start time for " << joint_name_ << " is " << time_start.seconds() << " and end time is " << time_now.seconds() <<
+                                                                                                           " with difference of " << (time_now - time_start).seconds());
                     break;
                 }
                 rclcpp::sleep_for(std::chrono::milliseconds(50));
