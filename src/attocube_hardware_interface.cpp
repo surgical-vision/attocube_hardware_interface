@@ -158,7 +158,7 @@ hardware_interface::return_type AttocubeHardwareInterface::start() {
     for (auto &actor : actors_) {
         if(actor.actor_type_ != ECR5050){
             RCLCPP_INFO_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"), "Starting home procedure for linear actor: " << actor.joint_name_);
-            success = actor.findEOTLimits(20); //TODO: param or send with the request
+            success = actor.findEOTLimits(20, true); //TODO: param or send with the request
             if(!success){
                 RCLCPP_WARN_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),  "Actor for " << actor.joint_name_ << " failed to find limit\n");
                 status_ = hardware_interface::status::UNKNOWN;

@@ -123,10 +123,18 @@ double AttocubeActor::getCurrentPosition() {
     }
 }
 
-bool AttocubeActor::findEOTLimits(int timeout) {
+bool AttocubeActor::findEOTLimits(int timeout, bool full_speed=false) {
     int rc, on = 1, off = 0, eot_found = 0;
     rclcpp::Time time_start, time_now;
     rclcpp::Duration max_duration(timeout, 0);
+    int original_amp, original_freq;
+
+    if(full_speed){
+        original_amp = amplitude_;
+        original_freq = frequency_;
+        setActorAmplitude(MAX_AMPLITUDE);
+        setActorFrequency(MAX_FREQUENCY);
+    }
 
     // Auto reset the zero position when known
     ECC_controlAutoReset(device_, axis_, &on, 1);
@@ -189,6 +197,10 @@ bool AttocubeActor::findEOTLimits(int timeout) {
         RCLCPP_ERROR_STREAM(rclcpp::get_logger("AttocubeHardwareInterface"),"Actor for " << joint_name_
                                       << " joint failed to set reaching the EOT to deactivate the output with the error message: "
                                       << getECCErrorMessage(rc));
+    }
+    if(full_speed){
+        setActorAmplitude(original_amp);
+        setActorFrequency(original_freq);
     }
     return eot_found;
 }

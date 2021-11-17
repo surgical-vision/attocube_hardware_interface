@@ -95,11 +95,31 @@ ament_target_dependencies(device_identifier
         std_srvs
         )
 
+add_executable(actor_limits_cycle
+        src/utils/actor_limits_cycle.cpp
+        )
+target_link_libraries(actor_limits_cycle
+        ${PROJECT_NAME}
+        )
+
+ament_target_dependencies(actor_limits_cycle
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        rclcpp
+        std_srvs
+        )
 
 # Installation
 install(
-        TARGETS ${PROJECT_NAME}
+        TARGETS
+          ${PROJECT_NAME}
         DESTINATION lib
+)
+# Installation
+install(
+        TARGETS
+          device_identifier
+          actor_limits_cycle
+        RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
