@@ -16,6 +16,9 @@
 #define ECGp5050    10
 #define ECR5050     14
 
+#define MAX_FREQUENCY 5000000
+#define MAX_AMPLITUDE 45000
+
 
 class AttocubeActor{
 public:
@@ -131,7 +134,7 @@ public:
      * @param timeout
      * @return
      */
-    bool findEOTLimits(int timeout);
+    bool findEOTLimits(int timeout, bool full_speed);
 
     bool findRefPosition(int timeout);
 

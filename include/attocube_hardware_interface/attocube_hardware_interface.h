@@ -5,27 +5,6 @@
 #ifndef ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_HARDWARE_INTERFACE_H
 #define ATTOCUBE_HARDWARE_INTERFACE_ATTOCUBE_HARDWARE_INTERFACE_H
 
-//#include <rclcpp/rclcpp.hpp>
-//#include <sensor_msgs/JointState.h>
-//#include <trajectory_msgs/JointTrajectory.h>
-//#include <std_srvs/SetBool.h>
-//#include <std_srvs/Trigger.h>
-//#include <attocube_hardware_interface/attocube_actors.h>
-//#include <attocube_hardware_interface/attocube_device_manager.h>
-//#include <controller_manager/controller_manager.h>
-//#include <control_toolbox/filters.h>
-//#include <hardware_interface/robot_hw.h>
-//#include <hardware_interface/joint_state_interface.h>
-//#include <hardware_interface/joint_command_interface.h>
-//#include <joint_limits_interface/joint_limits.h>
-//#include <joint_limits_interface/joint_limits_interface.h>
-//#include <joint_limits_interface/joint_limits_rosparam.h>
-//#include <joint_limits_interface/joint_limits_urdf.h>
-//#include <std_msgs/Duration.h>
-//#include <urdf/model.h>
-//#include <sensor_msgs/JointState.h>
-//#include <angles/angles.h>
-
 #include <builtin_interfaces/msg/duration.h>
 #include <urdf/model.h>
 #include <sensor_msgs/msg/joint_state.h>
