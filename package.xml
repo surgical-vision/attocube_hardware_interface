@@ -8,8 +8,8 @@
 
   <maintainer email="george.dwyer@ucl.ac.uk">George Dwyer</maintainer>
 
-  <license>GPLv3</license>
-  <url type="repository">https://www.github.com/surgical-vision/attocube_hardware_interface</url>
+  <license>Apache License 2.0</license>
+  <url type="repository">https://www.github.com/grdwyer/attocube_hardware_interface</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>hardware_interface</buildtool_depend>
@@ -19,7 +19,6 @@
   <depend>rclcpp</depend>
   <depend>std_srvs</depend>
   <depend>controller_manager</depend>
-  <depend>fri_client_sdk</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
